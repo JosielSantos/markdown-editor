@@ -9,7 +9,7 @@ function MarkdownToHtml(const Markdown: string): string;
 implementation
 
 uses
-  MarkdownCommonMark;
+  MarkdownCommonMark, SysUtils;
 
 const
   DocumentStart = '<!doctype html>' + LineEnding +
@@ -23,9 +23,21 @@ const
     'margin-left:0;padding-left:1rem}a{color:#0645ad}</style></head><body>' +
     LineEnding;
 
+function RenderTaskListItems(const Html: string): string;
+begin
+  Result := StringReplace(Html, '<li>[] ',
+    '<li><input type="checkbox" disabled> ', [rfReplaceAll]);
+  Result := StringReplace(Result, '<li>[ ] ',
+    '<li><input type="checkbox" disabled> ', [rfReplaceAll]);
+  Result := StringReplace(Result, '<li>[x] ',
+    '<li><input type="checkbox" checked disabled> ',
+    [rfReplaceAll, rfIgnoreCase]);
+end;
+
 function RenderMarkdownFragment(const Markdown: string): string;
 begin
-  Result := TCommonMarkEngine.Process(Markdown, True);
+  Result := RenderTaskListItems(
+    TCommonMarkEngine.Process(Markdown, True));
 end;
 
 function MarkdownToHtml(const Markdown: string): string;

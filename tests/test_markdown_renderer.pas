@@ -34,6 +34,12 @@ begin
     '  - filho' + LineEnding + '  - filha');
   ExpectContains('lista aninhada', Html, '<li>filho</li>');
 
+  Html := MarkdownToHtml('* [] Tarefa1' + LineEnding + '* [x] Tarefa2');
+  ExpectContains('tarefa desmarcada', Html,
+    '<li><input type="checkbox" disabled> Tarefa1</li>');
+  ExpectContains('tarefa marcada', Html,
+    '<li><input type="checkbox" checked disabled> Tarefa2</li>');
+
   Html := MarkdownToHtml('~~texto removido~~');
   ExpectContains('extensão GFM', Html, '<del>texto removido</del>');
 

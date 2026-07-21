@@ -57,6 +57,7 @@ uses
     Html_Export_Service,
     LCLIntf,
     LCLType,
+    Line_Navigation,
     Preview_Form,
     SysUtils;
 
@@ -175,7 +176,7 @@ var
 begin
     if not ChooseLineNumber(Self, EditorMemo.CaretPos.Y + 1, EditorMemo.Lines.Count, SelectedLine) then
         Exit;
-    EditorMemo.CaretPos := Point(0, SelectedLine - 1);
+    EditorMemo.SelStart := MemoLineStartIndex(EditorMemo.Lines, SelectedLine);
     EditorMemo.SetFocus;
 end;
 

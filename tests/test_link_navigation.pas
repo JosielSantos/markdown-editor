@@ -14,7 +14,7 @@ type
     private
         procedure AssertAction(const Uri: string; Expected: TLinkNavigationAction);
     published
-        procedure AllowsRenderedPreviewDocument;
+        procedure KeepsMarkdownEditorLinksInPreview;
         procedure KeepsDocumentAnchorsInPreview;
         procedure OpensSupportedLinksExternally;
         procedure BlocksUnsupportedLinks;
@@ -27,16 +27,13 @@ uses
 
 procedure TLinkNavigationTests.AssertAction(const Uri: string; Expected: TLinkNavigationAction);
 begin
-    AssertEquals(Uri, Ord(Expected), Ord(ClassifyNavigation(Uri, False)));
+    AssertEquals(Uri, Ord(Expected), Ord(ClassifyNavigation(Uri)));
 end;
 
-procedure TLinkNavigationTests.AllowsRenderedPreviewDocument;
+procedure TLinkNavigationTests.KeepsMarkdownEditorLinksInPreview;
 begin
-    AssertEquals(
-        'documento renderizado',
-        Ord(lnaKeepInPreview),
-        Ord(ClassifyNavigation('data:text/html,conteudo', True))
-    );
+    AssertAction('mdeditor://preview/', lnaKeepInPreview);
+    AssertAction('MDEDITOR://document/manual.md', lnaKeepInPreview);
 end;
 
 procedure TLinkNavigationTests.KeepsDocumentAnchorsInPreview;
@@ -59,6 +56,8 @@ begin
     AssertAction('data:text/html,conteudo', lnaBlock);
     AssertAction('about:blank', lnaBlock);
     AssertAction('outro-arquivo.md', lnaBlock);
+    AssertAction('mdeditor:documento.md', lnaBlock);
+    AssertAction('mdeditor-extra://documento.md', lnaBlock);
 end;
 
 initialization

@@ -6,6 +6,7 @@ unit Preview_Form;
 interface
 
 uses
+    ActiveX,
     Classes,
     ExtCtrls,
     Forms,
@@ -23,7 +24,6 @@ type
         InitializationTimer: TTimer;
         HtmlDocument: string;
         ErrorShown: Boolean;
-        PreviewNavigationPending: Boolean;
         procedure BrowserAfterCreated(Sender: TObject);
         procedure BrowserInitializationError(Sender: TObject; ErrorCode: HRESULT; const ErrorMessage: wvstring);
         procedure BrowserAcceleratorKeyPressed(
@@ -40,6 +40,11 @@ type
             Sender: TObject;
             const WebView: ICoreWebView2;
             const Args: ICoreWebView2NewWindowRequestedEventArgs
+        );
+        procedure BrowserWebResourceRequested(
+            Sender: TObject;
+            const WebView: ICoreWebView2;
+            const Args: ICoreWebView2WebResourceRequestedEventArgs
         );
         procedure CheckWebViewInitialization(Sender: TObject);
         procedure CloseWithEscape(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -63,7 +68,20 @@ uses
     Markdown_Renderer,
     SysUtils,
     uWVCoreWebView2Args,
+    uWVCoreWebView2WebResourceRequest,
     uWVLoader;
+
+const
+    PreviewDocumentUri = MarkdownEditorSchemePrefix + 'preview/';
+
+procedure RegisterMarkdownEditorScheme(Sender: TObject; var CustomSchemes: TWVCustomSchemeInfoArray);
+begin
+    SetLength(CustomSchemes, 1);
+    CustomSchemes[0].SchemeName := MarkdownEditorScheme;
+    CustomSchemes[0].TreatAsSecure := True;
+    CustomSchemes[0].AllowedDomains := '';
+    CustomSchemes[0].HasAuthorityComponent := True;
+end;
 
 procedure StartWebViewRuntime;
 begin
@@ -72,6 +90,7 @@ begin
     GlobalWebView2Loader := TWVLoader.Create(nil);
     GlobalWebView2Loader.UserDataFolder :=
         UTF8Decode(IncludeTrailingPathDelimiter(GetAppConfigDir(False)) + 'webview2');
+    GlobalWebView2Loader.OnGetCustomSchemes := @RegisterMarkdownEditorScheme;
     GlobalWebView2Loader.StartWebView2;
 end;
 
@@ -94,6 +113,7 @@ begin
     Browser.OnAcceleratorKeyPressed := @BrowserAcceleratorKeyPressed;
     Browser.OnNavigationStarting := @BrowserNavigationStarting;
     Browser.OnNewWindowRequested := @BrowserNewWindowRequested;
+    Browser.OnWebResourceRequested := @BrowserWebResourceRequested;
 
     BrowserHost := TWVWindowParent.Create(Self);
     BrowserHost.Parent := Self;
@@ -119,7 +139,7 @@ begin
     NavigationArgs := TCoreWebView2NavigationStartingEventArgs.Create(Args);
     try
         Uri := UTF8Encode(NavigationArgs.URI);
-        case ClassifyNavigation(Uri, PreviewNavigationPending) of
+        case ClassifyNavigation(Uri) of
             lnaKeepInPreview: Exit;
             lnaOpenExternally:
             begin
@@ -129,7 +149,6 @@ begin
             lnaBlock: NavigationArgs.Cancel := True;
         end;
     finally
-        PreviewNavigationPending := False;
         NavigationArgs.Free;
     end;
 end;
@@ -147,7 +166,7 @@ begin
     try
         NewWindowArgs.Handled := True;
         Uri := UTF8Encode(NewWindowArgs.URI);
-        case ClassifyNavigation(Uri, False) of
+        case ClassifyNavigation(Uri) of
             lnaKeepInPreview: Browser.Navigate(UTF8Decode(Uri));
             lnaOpenExternally: OpenExternalLink(Uri);
             lnaBlock: Exit;
@@ -157,15 +176,58 @@ begin
     end;
 end;
 
+procedure TPreviewForm.BrowserWebResourceRequested(
+    Sender: TObject;
+    const WebView: ICoreWebView2;
+    const Args: ICoreWebView2WebResourceRequestedEventArgs
+);
+var
+    RequestArgs: TCoreWebView2WebResourceRequestedEventArgs;
+    Request: TCoreWebView2WebResourceRequestRef;
+    Response: ICoreWebView2WebResourceResponse;
+    HtmlStream: TStringStream;
+    StreamAdapter: IStream;
+begin
+    Response := nil;
+    StreamAdapter := nil;
+    RequestArgs := TCoreWebView2WebResourceRequestedEventArgs.Create(Args);
+    Request := TCoreWebView2WebResourceRequestRef.Create(RequestArgs.Request);
+    try
+        if SameText(UTF8Encode(Request.URI), PreviewDocumentUri) then
+        begin
+            HtmlStream := TStringStream.Create(HtmlDocument);
+            StreamAdapter := TStreamAdapter.Create(HtmlStream, soOwned);
+            Browser.CoreWebView2Environment.CreateWebResourceResponse(
+                StreamAdapter,
+                200,
+                'OK',
+                'Content-Type: text/html; charset=utf-8',
+                Response
+            );
+        end
+        else
+            Browser.CoreWebView2Environment.CreateWebResourceResponse(nil, 404, 'Not Found', '', Response);
+        RequestArgs.Response := Response;
+    finally
+        StreamAdapter := nil;
+        Response := nil;
+        Request.Free;
+        RequestArgs.Free;
+    end;
+end;
+
 procedure TPreviewForm.BrowserAfterCreated(Sender: TObject);
 begin
     Browser.DefaultContextMenusEnabled := False;
     Browser.DevToolsEnabled := False;
     Browser.ScriptEnabled := False;
     BrowserHost.UpdateSize;
-    PreviewNavigationPending := True;
-    if not Browser.NavigateToString(UTF8Decode(HtmlDocument)) then
-        PreviewNavigationPending := False;
+    Browser.AddWebResourceRequestedFilterWithRequestSourceKinds(
+        MarkdownEditorScheme + '*',
+        COREWEBVIEW2_WEB_RESOURCE_CONTEXT_ALL,
+        COREWEBVIEW2_WEB_RESOURCE_REQUEST_SOURCE_KINDS_ALL
+    );
+    Browser.Navigate(UTF8Decode(PreviewDocumentUri));
     BrowserHost.SetFocus;
 end;
 

@@ -21,6 +21,8 @@ type
     procedure EditorChanged(Sender: TObject);
     procedure ExitEditor(Sender: TObject);
     procedure ExportHtml(Sender: TObject);
+    procedure ExportHtmlAs(Sender: TObject);
+    procedure ExportHtmlToFile(const HtmlFileName: string);
     function HandleUnsavedChanges: Boolean;
     procedure NewDocument(Sender: TObject);
     procedure OpenMarkdown(Sender: TObject);
@@ -40,8 +42,8 @@ var
 implementation
 
 uses
-  Controls, Dialogs, Editor_Menu, File_Service, LCLIntf, LCLType,
-  Markdown_Renderer, Preview_Form, SysUtils;
+  Controls, Dialogs, Editor_Menu, File_Service, Html_Export_Service,
+  LCLIntf, LCLType, Preview_Form, SysUtils;
 
 procedure TEditorForm.CreateEditor;
 begin
@@ -70,6 +72,7 @@ begin
   Actions.SaveDocument := @SaveMarkdown;
   Actions.SaveDocumentAs := @SaveMarkdownAs;
   Actions.ExportHtml := @ExportHtml;
+  Actions.ExportHtmlAs := @ExportHtmlAs;
   Actions.ExitEditor := @ExitEditor;
   Actions.ShowPreview := @ShowPreview;
   Menu := BuildEditorMenu(Self, Actions);
@@ -128,30 +131,28 @@ begin
 end;
 
 procedure TEditorForm.ExportHtml(Sender: TObject);
-var
-  ExportDialog: TSaveDialog;
 begin
-  ExportDialog := TSaveDialog.Create(Self);
+  if CurrentFileName = '' then
+    ExportHtmlAs(Sender)
+  else
+    ExportHtmlToFile(HtmlExportFileName(CurrentFileName));
+end;
+
+procedure TEditorForm.ExportHtmlAs(Sender: TObject);
+var
+  HtmlFileName: string;
+begin
+  if ChooseHtmlExportFile(Self, CurrentFileName, HtmlFileName) then
+    ExportHtmlToFile(HtmlFileName);
+end;
+
+procedure TEditorForm.ExportHtmlToFile(const HtmlFileName: string);
+begin
   try
-    ExportDialog.Title := 'Exportar documento como HTML';
-    ExportDialog.Filter := 'Arquivo HTML|*.html;*.htm|Todos os arquivos|*.*';
-    ExportDialog.DefaultExt := 'html';
-    ExportDialog.Options := [ofOverwritePrompt, ofEnableSizing];
-    if CurrentFileName = '' then
-      ExportDialog.FileName := 'documento.html'
-    else
-      ExportDialog.FileName := ChangeFileExt(CurrentFileName, '.html');
-    if not ExportDialog.Execute then
-      Exit;
-    try
-      WriteUtf8TextFile(ExportDialog.FileName,
-        MarkdownToHtml(EditorMemo.Text));
-    except
-      on Error: Exception do
-        MessageDlg('Erro ao exportar HTML', Error.Message, mtError, [mbOK], 0);
-    end;
-  finally
-    ExportDialog.Free;
+    ExportMarkdownToHtmlFile(EditorMemo.Text, HtmlFileName);
+  except
+    on Error: Exception do
+      MessageDlg('Erro ao exportar HTML', Error.Message, mtError, [mbOK], 0);
   end;
 end;
 

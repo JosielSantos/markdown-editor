@@ -63,7 +63,7 @@
         <PackageName Value="MarkdownEngine"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="6">
+    <Units Count="7">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -93,6 +93,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Editor_Menu"/>
       </Unit5>
+      <Unit6>
+        <Filename Value="src/html_export_service.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Html_Export_Service"/>
+      </Unit6>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

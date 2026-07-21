@@ -10,6 +10,12 @@ const
   TestFileName = 'bin' + DirectorySeparator + 'file-service-test.md';
 
 begin
+  if HtmlExportFileName('pasta' + DirectorySeparator + 'notas.markdown') <>
+    'pasta' + DirectorySeparator + 'notas.html' then
+  begin
+    WriteLn(StdErr, 'FALHOU: nome do arquivo HTML está incorreto.');
+    Halt(1);
+  end;
   WriteUtf8TextFile(TestFileName, TestContent);
   if ReadUtf8TextFile(TestFileName) <> TestContent then
   begin
@@ -23,4 +29,3 @@ begin
   end;
   WriteLn('Todos os testes de arquivo passaram.');
 end.
-

@@ -14,6 +14,7 @@ type
     SaveDocument: TNotifyEvent;
     SaveDocumentAs: TNotifyEvent;
     ExportHtml: TNotifyEvent;
+    ExportHtmlAs: TNotifyEvent;
     ExitEditor: TNotifyEvent;
     ShowPreview: TNotifyEvent;
   end;
@@ -60,8 +61,10 @@ begin
     Actions.SaveDocument);
   AddMenuItem(FileMenu, 'Salvar &como...',
     ShortCut(Ord('S'), [ssCtrl, ssShift]), Actions.SaveDocumentAs);
-  AddMenuItem(FileMenu, '&Exportar como HTML...', ShortCut(VK_F2, []),
+  AddMenuItem(FileMenu, '&Exportar HTML', ShortCut(VK_F2, []),
     Actions.ExportHtml);
+  AddMenuItem(FileMenu, 'Exportar HTML &como...',
+    ShortCut(VK_F2, [ssCtrl]), Actions.ExportHtmlAs);
   AddMenuItem(FileMenu, '-', 0, nil);
   AddMenuItem(FileMenu, '&Sair', ShortCut(VK_F4, [ssAlt]),
     Actions.ExitEditor);

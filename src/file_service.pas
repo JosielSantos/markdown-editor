@@ -4,6 +4,7 @@ unit File_Service;
 
 interface
 
+function HtmlExportFileName(const MarkdownFileName: string): string;
 function ReadUtf8TextFile(const FileName: string): string;
 procedure WriteUtf8TextFile(const FileName, Content: string);
 
@@ -11,6 +12,11 @@ implementation
 
 uses
   Classes, SysUtils;
+
+function HtmlExportFileName(const MarkdownFileName: string): string;
+begin
+  Result := ChangeFileExt(MarkdownFileName, '.html');
+end;
 
 function ReadUtf8TextFile(const FileName: string): string;
 var

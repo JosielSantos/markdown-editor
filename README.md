@@ -11,13 +11,18 @@ navegador, WebView ou servidor local.
 | Abrir um arquivo Markdown | `Ctrl+O` |
 | Salvar o Markdown atual | `Ctrl+S` |
 | Salvar Markdown como | `Ctrl+Shift+S` |
-| Exportar um HTML autocontido | `F2` |
+| Exportar HTML junto ao Markdown atual | `F2` |
+| Exportar HTML como | `Ctrl+F2` |
 | Renderizar e abrir a visualização | `F9` |
 | Fechar a visualização | `Esc` |
 
 Todos os comandos também estão disponíveis na barra de menus. Ao fechar,
 criar ou abrir outro documento, o editor pergunta o que fazer com alterações
 não salvas.
+
+Com um Markdown nomeado, `F2` grava o HTML no mesmo diretório e troca a
+extensão por `.html`. Sem um arquivo atual, `F2` abre o diálogo de exportação.
+`Ctrl+F2` sempre permite escolher outro nome ou diretório.
 
 Um documento também pode ser aberto diretamente pela linha de comando:
 

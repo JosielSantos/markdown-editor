@@ -42,7 +42,7 @@
         <PackageName Value="TurboPowerIPro"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="5">
+    <Units Count="7">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -67,6 +67,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Preview_Form"/>
       </Unit4>
+      <Unit5>
+        <Filename Value="src/file_service.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="File_Service"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="src/editor_menu.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Editor_Menu"/>
+      </Unit6>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

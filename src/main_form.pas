@@ -6,17 +6,29 @@ interface
 
 uses
   Classes,
-  Forms, Menus, StdCtrls;
+  Forms, StdCtrls;
 
 type
   TEditorForm = class(TForm)
   private
+    CurrentFileName: string;
+    DocumentModified: Boolean;
     EditorMemo: TMemo;
+    procedure CanCloseEditor(Sender: TObject; var CanClose: Boolean);
+    function ChooseMarkdownSavePath: Boolean;
     procedure CreateEditor;
     procedure CreateMenuBar;
+    procedure EditorChanged(Sender: TObject);
     procedure ExitEditor(Sender: TObject);
+    function HandleUnsavedChanges: Boolean;
+    procedure NewDocument(Sender: TObject);
+    procedure OpenMarkdown(Sender: TObject);
+    function SaveCurrentDocument: Boolean;
+    procedure SaveMarkdown(Sender: TObject);
+    procedure SaveMarkdownAs(Sender: TObject);
     procedure ShowAbout(Sender: TObject);
     procedure ShowPreview(Sender: TObject);
+    procedure UpdateWindowTitle;
   public
     constructor Create(TheOwner: TComponent); override;
   end;
@@ -27,7 +39,7 @@ var
 implementation
 
 uses
-  Controls, Dialogs, LCLType, Preview_Form;
+  Controls, Dialogs, Editor_Menu, File_Service, Preview_Form, SysUtils;
 
 procedure TEditorForm.CreateEditor;
 begin
@@ -43,45 +55,22 @@ begin
   EditorMemo.AccessibleDescription :=
     'Digite Markdown. Pressione F9 para abrir a visualização.';
   EditorMemo.AccessibleRole := larTextEditorMultiline;
+  EditorMemo.OnChange := @EditorChanged;
   ActiveControl := EditorMemo;
 end;
 
 procedure TEditorForm.CreateMenuBar;
 var
-  AboutItem: TMenuItem;
-  ExitItem: TMenuItem;
-  FileMenu: TMenuItem;
-  HelpMenu: TMenuItem;
-  PreviewItem: TMenuItem;
-  ViewMenu: TMenuItem;
+  Actions: TEditorMenuActions;
 begin
-  Menu := TMainMenu.Create(Self);
-
-  FileMenu := TMenuItem.Create(Menu);
-  FileMenu.Caption := '&Arquivo';
-  Menu.Items.Add(FileMenu);
-  ExitItem := TMenuItem.Create(FileMenu);
-  ExitItem.Caption := '&Sair';
-  ExitItem.ShortCut := ShortCut(VK_F4, [ssAlt]);
-  ExitItem.OnClick := @ExitEditor;
-  FileMenu.Add(ExitItem);
-
-  ViewMenu := TMenuItem.Create(Menu);
-  ViewMenu.Caption := '&Visualizar';
-  Menu.Items.Add(ViewMenu);
-  PreviewItem := TMenuItem.Create(ViewMenu);
-  PreviewItem.Caption := '&Renderizar Markdown';
-  PreviewItem.ShortCut := ShortCut(VK_F9, []);
-  PreviewItem.OnClick := @ShowPreview;
-  ViewMenu.Add(PreviewItem);
-
-  HelpMenu := TMenuItem.Create(Menu);
-  HelpMenu.Caption := 'A&juda';
-  Menu.Items.Add(HelpMenu);
-  AboutItem := TMenuItem.Create(HelpMenu);
-  AboutItem.Caption := '&Atalhos e acessibilidade';
-  AboutItem.OnClick := @ShowAbout;
-  HelpMenu.Add(AboutItem);
+  Actions.NewDocument := @NewDocument;
+  Actions.OpenDocument := @OpenMarkdown;
+  Actions.SaveDocument := @SaveMarkdown;
+  Actions.SaveDocumentAs := @SaveMarkdownAs;
+  Actions.ExitEditor := @ExitEditor;
+  Actions.ShowPreview := @ShowPreview;
+  Actions.ShowAbout := @ShowAbout;
+  Menu := BuildEditorMenu(Self, Actions);
 end;
 
 constructor TEditorForm.Create(TheOwner: TComponent);
@@ -93,11 +82,137 @@ begin
   Height := 650;
   CreateMenuBar;
   CreateEditor;
+  CurrentFileName := '';
+  DocumentModified := False;
+  OnCloseQuery := @CanCloseEditor;
+  UpdateWindowTitle;
+end;
+
+procedure TEditorForm.CanCloseEditor(Sender: TObject; var CanClose: Boolean);
+begin
+  CanClose := HandleUnsavedChanges;
+end;
+
+function TEditorForm.ChooseMarkdownSavePath: Boolean;
+var
+  SaveDialog: TSaveDialog;
+begin
+  SaveDialog := TSaveDialog.Create(Self);
+  try
+    SaveDialog.Title := 'Salvar arquivo Markdown';
+    SaveDialog.Filter :=
+      'Arquivos Markdown|*.md;*.markdown|Todos os arquivos|*.*';
+    SaveDialog.DefaultExt := 'md';
+    SaveDialog.Options := [ofOverwritePrompt, ofEnableSizing];
+    if CurrentFileName <> '' then
+      SaveDialog.FileName := CurrentFileName;
+    Result := SaveDialog.Execute;
+    if Result then
+      CurrentFileName := SaveDialog.FileName;
+  finally
+    SaveDialog.Free;
+  end;
+end;
+
+procedure TEditorForm.EditorChanged(Sender: TObject);
+begin
+  DocumentModified := True;
+  UpdateWindowTitle;
 end;
 
 procedure TEditorForm.ExitEditor(Sender: TObject);
 begin
   Close;
+end;
+
+function TEditorForm.HandleUnsavedChanges: Boolean;
+var
+  Choice: TModalResult;
+begin
+  if not DocumentModified then
+    Exit(True);
+  Choice := MessageDlg('Alterações não salvas',
+    'Deseja salvar as alterações antes de continuar?', mtConfirmation,
+    [mbYes, mbNo, mbCancel], 0);
+  case Choice of
+    mrYes: Result := SaveCurrentDocument;
+    mrNo: Result := True;
+  else
+    Result := False;
+  end;
+end;
+
+procedure TEditorForm.NewDocument(Sender: TObject);
+begin
+  if not HandleUnsavedChanges then
+    Exit;
+  EditorMemo.Clear;
+  CurrentFileName := '';
+  DocumentModified := False;
+  UpdateWindowTitle;
+end;
+
+procedure TEditorForm.OpenMarkdown(Sender: TObject);
+var
+  OpenDialog: TOpenDialog;
+begin
+  if not HandleUnsavedChanges then
+    Exit;
+  OpenDialog := TOpenDialog.Create(Self);
+  try
+    OpenDialog.Title := 'Abrir arquivo Markdown';
+    OpenDialog.Filter :=
+      'Arquivos Markdown|*.md;*.markdown|Todos os arquivos|*.*';
+    OpenDialog.Options := [ofFileMustExist, ofPathMustExist, ofEnableSizing];
+    if not OpenDialog.Execute then
+      Exit;
+    try
+      EditorMemo.Text := ReadUtf8TextFile(OpenDialog.FileName);
+      CurrentFileName := OpenDialog.FileName;
+      DocumentModified := False;
+      UpdateWindowTitle;
+    except
+      on Error: Exception do
+        MessageDlg('Erro ao abrir arquivo', Error.Message, mtError, [mbOK], 0);
+    end;
+  finally
+    OpenDialog.Free;
+  end;
+end;
+
+function TEditorForm.SaveCurrentDocument: Boolean;
+begin
+  Result := False;
+  if (CurrentFileName = '') and not ChooseMarkdownSavePath then
+    Exit;
+  try
+    WriteUtf8TextFile(CurrentFileName, EditorMemo.Text);
+    DocumentModified := False;
+    UpdateWindowTitle;
+    Result := True;
+  except
+    on Error: Exception do
+      MessageDlg('Erro ao salvar arquivo', Error.Message, mtError, [mbOK], 0);
+  end;
+end;
+
+procedure TEditorForm.SaveMarkdown(Sender: TObject);
+begin
+  SaveCurrentDocument;
+end;
+
+procedure TEditorForm.SaveMarkdownAs(Sender: TObject);
+var
+  PreviousFileName: string;
+begin
+  PreviousFileName := CurrentFileName;
+  CurrentFileName := '';
+  if not ChooseMarkdownSavePath then
+  begin
+    CurrentFileName := PreviousFileName;
+    Exit;
+  end;
+  SaveCurrentDocument;
 end;
 
 procedure TEditorForm.ShowAbout(Sender: TObject);
@@ -121,6 +236,19 @@ begin
   finally
     Preview.Free;
   end;
+end;
+
+procedure TEditorForm.UpdateWindowTitle;
+var
+  DocumentName: string;
+begin
+  if CurrentFileName = '' then
+    DocumentName := 'Sem título'
+  else
+    DocumentName := ExtractFileName(CurrentFileName);
+  if DocumentModified then
+    DocumentName := DocumentName + ' *';
+  Caption := DocumentName + ' — Editor Markdown Acessível';
 end;
 
 end.

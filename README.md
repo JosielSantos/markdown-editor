@@ -19,17 +19,16 @@ Todos os comandos também estão disponíveis na barra de menus. Ao fechar,
 criar ou abrir outro documento, o editor pergunta o que fazer com alterações
 não salvas.
 
-O renderizador cobre o subconjunto necessário ao MVP: títulos, parágrafos,
-negrito, itálico, código em linha, links, listas ordenadas e não ordenadas,
-citações, separadores e blocos de código cercados por três crases.
+O conteúdo é processado pela biblioteca `MarkdownEngine` no dialeto
+CommonMark, incluindo estruturas como listas aninhadas que não eram tratadas
+corretamente pelo parser inicial do MVP.
 
 ## Acessibilidade
 
 - Editor, menus e diálogos de arquivo usam controles nativos do Windows.
 - O editor possui nome, descrição e papel de acessibilidade explícitos.
-- A visualização interna oferece duas guias: HTML visual e texto estruturado
-  somente leitura para leitores de tela.
-- Na visualização, `Ctrl+Tab` alterna entre as guias e `Esc` volta ao editor.
+- A visualização é um único diálogo interno somente leitura; `Esc` volta ao
+  editor.
 - Não há barras de ferramentas ou controles de formatação que aumentem a
   quantidade de paradas de tabulação.
 
@@ -43,14 +42,23 @@ As bibliotecas são rastreadas na seção `RequiredPackages` de
 
 - `LCL`, para a interface nativa;
 - `TurboPowerIPro`, distribuído com o Lazarus, para a visualização HTML
-  interna.
+  interna;
+- `MarkdownEngine`, da biblioteca BSD `delphi-markdown`, para o parsing
+  CommonMark. A revisão usada fica fixada como submódulo Git.
 
 As dependências são vinculadas ao executável; nenhuma DLL adicional nem
 componente de navegador precisa ser distribuído.
 
 ## Compilar e testar
 
-Com `lazbuild` no `PATH` ou `LazarusDir` definido:
+Clone incluindo a dependência:
+
+```powershell
+git clone --recurse-submodules <url-do-repositorio>
+```
+
+Em um clone já existente, execute `git submodule update --init`. Depois, com
+`lazbuild` no `PATH` ou `LazarusDir` definido:
 
 ```powershell
 .\scripts\build.ps1 -Mode Release
@@ -62,12 +70,14 @@ O executável é criado em `bin\markdown-editor.exe`. Também é possível abrir
 
 ## Estrutura
 
-- `src/markdown_renderer.pas`: conversão de blocos para HTML/texto acessível;
-- `src/markdown_inline.pas`: marcação em linha e escape seguro de HTML;
+- `src/markdown_renderer.pas`: adaptador entre `MarkdownEngine` e a página
+  HTML autocontida;
 - `src/main_form.pas`: ciclo de vida do documento e coordenação da interface;
 - `src/preview_form.pas`: diálogo modal de visualização;
 - `src/file_service.pas`: leitura e escrita UTF-8;
 - `tests/`: testes executáveis sem framework externo.
 
-Todos os arquivos Pascal têm menos de 300 linhas e as unidades se mantêm
-focadas em uma responsabilidade.
+Todos os arquivos Pascal próprios têm menos de 300 linhas e as unidades se
+mantêm focadas em uma responsabilidade. O código de terceiros permanece sem
+alterações dentro de `vendor/` e sua licença está reproduzida em
+`THIRD_PARTY_NOTICES.md`.

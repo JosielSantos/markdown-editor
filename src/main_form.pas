@@ -253,9 +253,7 @@ begin
     'Ctrl+S: salvar Markdown' + LineEnding +
     'F2: exportar como HTML' + LineEnding +
     'F9: renderizar Markdown' + LineEnding +
-    'Esc: fechar a visualização' + LineEnding +
-    'Ctrl+Tab: alternar a visualização visual e o texto acessível' +
-    LineEnding + LineEnding +
+    'Esc: fechar a visualização' + LineEnding + LineEnding +
     'O editor usa controles nativos do Windows e não abre o navegador.',
     mtInformation, [mbOK], 0);
 end;

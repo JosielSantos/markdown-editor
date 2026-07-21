@@ -16,7 +16,6 @@ type
     ExportHtml: TNotifyEvent;
     ExitEditor: TNotifyEvent;
     ShowPreview: TNotifyEvent;
-    ShowAbout: TNotifyEvent;
   end;
 
 function BuildEditorMenu(Owner: TComponent;
@@ -48,7 +47,6 @@ function BuildEditorMenu(Owner: TComponent;
   const Actions: TEditorMenuActions): TMainMenu;
 var
   FileMenu: TMenuItem;
-  HelpMenu: TMenuItem;
   ViewMenu: TMenuItem;
 begin
   Result := TMainMenu.Create(Owner);
@@ -72,8 +70,6 @@ begin
   AddMenuItem(ViewMenu, '&Renderizar Markdown', ShortCut(VK_F9, []),
     Actions.ShowPreview);
 
-  HelpMenu := AddTopLevelMenu(Result, 'A&juda');
-  AddMenuItem(HelpMenu, '&Atalhos e acessibilidade', 0, Actions.ShowAbout);
 end;
 
 end.

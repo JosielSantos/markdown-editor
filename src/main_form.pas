@@ -27,7 +27,6 @@ type
     function SaveCurrentDocument: Boolean;
     procedure SaveMarkdown(Sender: TObject);
     procedure SaveMarkdownAs(Sender: TObject);
-    procedure ShowAbout(Sender: TObject);
     procedure ShowPreview(Sender: TObject);
     procedure UpdateWindowTitle;
   public
@@ -73,7 +72,6 @@ begin
   Actions.ExportHtml := @ExportHtml;
   Actions.ExitEditor := @ExitEditor;
   Actions.ShowPreview := @ShowPreview;
-  Actions.ShowAbout := @ShowAbout;
   Menu := BuildEditorMenu(Self, Actions);
 end;
 
@@ -256,18 +254,6 @@ begin
     Exit;
   end;
   SaveCurrentDocument;
-end;
-
-procedure TEditorForm.ShowAbout(Sender: TObject);
-begin
-  MessageDlg('Atalhos e acessibilidade',
-    'Ctrl+O: abrir Markdown' + LineEnding +
-    'Ctrl+S: salvar Markdown' + LineEnding +
-    'F2: exportar como HTML' + LineEnding +
-    'F9: renderizar Markdown' + LineEnding +
-    'Esc: fechar a visualização' + LineEnding + LineEnding +
-    'O editor usa controles nativos do Windows e não abre o navegador.',
-    mtInformation, [mbOK], 0);
 end;
 
 procedure TEditorForm.ShowPreview(Sender: TObject);

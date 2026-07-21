@@ -29,6 +29,7 @@ type
     function SaveCurrentDocument: Boolean;
     procedure SaveMarkdown(Sender: TObject);
     procedure SaveMarkdownAs(Sender: TObject);
+    procedure ShowErrorMessage(const DialogTitle, ErrorMessage: string);
     procedure ShowPreview(Sender: TObject);
     procedure UpdateWindowTitle;
   public
@@ -152,7 +153,7 @@ begin
     ExportMarkdownToHtmlFile(EditorMemo.Text, HtmlFileName);
   except
     on Error: Exception do
-      MessageDlg('Erro ao exportar HTML', Error.Message, mtError, [mbOK], 0);
+      ShowErrorMessage('Erro ao exportar HTML', Error.Message);
   end;
 end;
 
@@ -198,7 +199,7 @@ begin
     Result := True;
   except
     on Error: Exception do
-      MessageDlg('Erro ao abrir arquivo', Error.Message, mtError, [mbOK], 0);
+      ShowErrorMessage('Erro ao abrir arquivo', Error.Message);
   end;
 end;
 
@@ -234,7 +235,7 @@ begin
     Result := True;
   except
     on Error: Exception do
-      MessageDlg('Erro ao salvar arquivo', Error.Message, mtError, [mbOK], 0);
+      ShowErrorMessage('Erro ao salvar arquivo', Error.Message);
   end;
 end;
 
@@ -255,6 +256,13 @@ begin
     Exit;
   end;
   SaveCurrentDocument;
+end;
+
+procedure TEditorForm.ShowErrorMessage(const DialogTitle,
+  ErrorMessage: string);
+begin
+  LCLIntf.MessageBox(Handle, PChar(ErrorMessage), PChar(DialogTitle),
+    MB_OK or MB_ICONERROR);
 end;
 
 procedure TEditorForm.ShowPreview(Sender: TObject);

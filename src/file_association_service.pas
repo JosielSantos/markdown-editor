@@ -6,7 +6,7 @@ unit File_Association_Service;
 interface
 
 const
-    MarkdownEditorApplicationName = 'Editor Markdown Acessível';
+    MarkdownEditorApplicationName = 'Markdown Editor';
 
 function BuildIconReference(const ExecutableFileName: string): string;
 function BuildOpenCommand(const ExecutableFileName: string): string;
@@ -22,7 +22,7 @@ uses
 
 const
     ApplicationCapabilitiesKey = 'Software\JosielSantos\MarkdownEditor\Capabilities';
-    ApplicationDescription = 'Editor e visualizador acessível de documentos Markdown';
+    ApplicationDescription = 'Editor e visualizador de documentos Markdown';
     ClassesKey = 'Software\Classes\';
     MarkdownContentType = 'text/markdown';
     MarkdownProgId = 'JosielSantos.MarkdownEditor.Document.1';

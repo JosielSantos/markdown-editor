@@ -16,7 +16,7 @@ uses
 var
     CommandLineArguments: TCommandLineArguments;
 begin
-    Application.Title := 'Editor Markdown Acessível';
+    Application.Title := 'Markdown Editor';
     Application.Initialize;
     CommandLineArguments := ParseProcessArguments;
     if CommandLineArguments.ErrorMessage <> '' then

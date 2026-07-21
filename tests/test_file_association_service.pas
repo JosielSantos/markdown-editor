@@ -39,7 +39,7 @@ end;
 
 procedure TFileAssociationServiceTests.ProvidesFriendlyApplicationName;
 begin
-    AssertEquals('Editor Markdown Acessível', MarkdownEditorApplicationName);
+    AssertEquals('Markdown Editor', MarkdownEditorApplicationName);
 end;
 
 initialization

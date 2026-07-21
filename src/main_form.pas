@@ -91,7 +91,7 @@ end;
 constructor TEditorForm.Create(TheOwner: TComponent);
 begin
     inherited CreateNew(TheOwner, 1);
-    Caption := 'Editor Markdown Acessível';
+    Caption := 'Markdown Editor';
     Position := poScreenCenter;
     Width := 900;
     Height := 650;
@@ -308,7 +308,7 @@ begin
         DocumentName := ExtractFileName(CurrentFileName);
     if DocumentModified then
         DocumentName := DocumentName + ' *';
-    Caption := DocumentName + ' — Editor Markdown Acessível';
+    Caption := DocumentName + ' — Markdown Editor';
 end;
 
 end.

@@ -17,7 +17,7 @@ begin
     Runner := TTestRunner.Create(nil);
     try
         Runner.Initialize;
-        Runner.Title := 'Testes do Editor Markdown Acessível';
+        Runner.Title := 'Testes do Markdown Editor';
         Runner.Run;
     finally
         Runner.Free;

@@ -10,7 +10,7 @@
       </Flags>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="Editor Markdown Acessível"/>
+      <Title Value="Markdown Editor"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>

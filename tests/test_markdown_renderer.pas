@@ -34,6 +34,9 @@ begin
     '  - filho' + LineEnding + '  - filha');
   ExpectContains('lista aninhada', Html, '<li>filho</li>');
 
+  Html := MarkdownToHtml('~~texto removido~~');
+  ExpectContains('extensão GFM', Html, '<del>texto removido</del>');
+
   Html := MarkdownToHtml('<script>alert(1)</script>' + LineEnding +
     '[perigoso](javascript:alert(1))');
   ExpectContains('escape de HTML', Html,

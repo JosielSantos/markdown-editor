@@ -19,9 +19,10 @@ Todos os comandos também estão disponíveis na barra de menus. Ao fechar,
 criar ou abrir outro documento, o editor pergunta o que fazer com alterações
 não salvas.
 
-O conteúdo é processado pela biblioteca `MarkdownEngine` no dialeto
-CommonMark, incluindo estruturas como listas aninhadas que não eram tratadas
-corretamente pelo parser inicial do MVP.
+O conteúdo é processado pela biblioteca `MarkdownEngine` com as extensões
+GitHub Flavored Markdown habilitadas, incluindo tabelas, texto riscado e
+estruturas como listas aninhadas que não eram tratadas corretamente pelo
+parser inicial do MVP.
 
 ## Acessibilidade
 
@@ -44,7 +45,7 @@ As bibliotecas são rastreadas na seção `RequiredPackages` de
 - `TurboPowerIPro`, distribuído com o Lazarus, para a visualização HTML
   interna;
 - `MarkdownEngine`, da biblioteca BSD `delphi-markdown`, para o parsing
-  CommonMark. A revisão usada fica fixada como submódulo Git.
+  GitHub Flavored Markdown. A revisão usada fica fixada como submódulo Git.
 
 As dependências são vinculadas ao executável; nenhuma DLL adicional nem
 componente de navegador precisa ser distribuído.

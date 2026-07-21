@@ -9,7 +9,7 @@ function MarkdownToHtml(const Markdown: string): string;
 implementation
 
 uses
-  MarkdownProcessor;
+  MarkdownCommonMark;
 
 const
   DocumentStart = '<!doctype html>' + LineEnding +
@@ -24,16 +24,8 @@ const
     LineEnding;
 
 function RenderMarkdownFragment(const Markdown: string): string;
-var
-  Processor: TMarkdownProcessor;
 begin
-  Processor := TMarkdownProcessor.CreateDialect(mdCommonMark);
-  try
-    Processor.AllowUnsafe := False;
-    Result := Processor.Process(Markdown);
-  finally
-    Processor.Free;
-  end;
+  Result := TCommonMarkEngine.Process(Markdown, True);
 end;
 
 function MarkdownToHtml(const Markdown: string): string;
@@ -43,5 +35,3 @@ begin
 end;
 
 end.
-
-

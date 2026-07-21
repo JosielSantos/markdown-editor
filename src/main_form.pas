@@ -20,6 +20,7 @@ type
     procedure CreateMenuBar;
     procedure EditorChanged(Sender: TObject);
     procedure ExitEditor(Sender: TObject);
+    procedure ExportHtml(Sender: TObject);
     function HandleUnsavedChanges: Boolean;
     procedure NewDocument(Sender: TObject);
     procedure OpenMarkdown(Sender: TObject);
@@ -39,7 +40,8 @@ var
 implementation
 
 uses
-  Controls, Dialogs, Editor_Menu, File_Service, Preview_Form, SysUtils;
+  Controls, Dialogs, Editor_Menu, File_Service, Markdown_Renderer,
+  Preview_Form, SysUtils;
 
 procedure TEditorForm.CreateEditor;
 begin
@@ -67,6 +69,7 @@ begin
   Actions.OpenDocument := @OpenMarkdown;
   Actions.SaveDocument := @SaveMarkdown;
   Actions.SaveDocumentAs := @SaveMarkdownAs;
+  Actions.ExportHtml := @ExportHtml;
   Actions.ExitEditor := @ExitEditor;
   Actions.ShowPreview := @ShowPreview;
   Actions.ShowAbout := @ShowAbout;
@@ -123,6 +126,34 @@ end;
 procedure TEditorForm.ExitEditor(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TEditorForm.ExportHtml(Sender: TObject);
+var
+  ExportDialog: TSaveDialog;
+begin
+  ExportDialog := TSaveDialog.Create(Self);
+  try
+    ExportDialog.Title := 'Exportar documento como HTML';
+    ExportDialog.Filter := 'Arquivo HTML|*.html;*.htm|Todos os arquivos|*.*';
+    ExportDialog.DefaultExt := 'html';
+    ExportDialog.Options := [ofOverwritePrompt, ofEnableSizing];
+    if CurrentFileName = '' then
+      ExportDialog.FileName := 'documento.html'
+    else
+      ExportDialog.FileName := ChangeFileExt(CurrentFileName, '.html');
+    if not ExportDialog.Execute then
+      Exit;
+    try
+      WriteUtf8TextFile(ExportDialog.FileName,
+        MarkdownToHtml(EditorMemo.Text));
+    except
+      on Error: Exception do
+        MessageDlg('Erro ao exportar HTML', Error.Message, mtError, [mbOK], 0);
+    end;
+  finally
+    ExportDialog.Free;
+  end;
 end;
 
 function TEditorForm.HandleUnsavedChanges: Boolean;
@@ -218,6 +249,9 @@ end;
 procedure TEditorForm.ShowAbout(Sender: TObject);
 begin
   MessageDlg('Atalhos e acessibilidade',
+    'Ctrl+O: abrir Markdown' + LineEnding +
+    'Ctrl+S: salvar Markdown' + LineEnding +
+    'F2: exportar como HTML' + LineEnding +
     'F9: renderizar Markdown' + LineEnding +
     'Esc: fechar a visualização' + LineEnding +
     'Ctrl+Tab: alternar a visualização visual e o texto acessível' +

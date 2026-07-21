@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="4">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -49,6 +49,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Main_Form"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="src/markdown_inline.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Markdown_Inline"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="src/markdown_renderer.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Markdown_Renderer"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

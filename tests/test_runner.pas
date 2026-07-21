@@ -10,6 +10,7 @@ uses
     Test_File_Association_Service,
     Test_File_Service,
     Test_Link_Navigation,
+    Test_Line_Navigation,
     Test_Markdown_Renderer;
 
 var

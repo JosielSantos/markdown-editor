@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="12">
+    <Units Count="14">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -126,6 +126,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Document_State"/>
       </Unit11>
+      <Unit12>
+        <Filename Value="src/line_navigation.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Line_Navigation"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="src/go_to_line_dialog.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Go_To_Line_Dialog"/>
+      </Unit13>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

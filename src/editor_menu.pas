@@ -18,6 +18,7 @@ type
         ExportHtml: TNotifyEvent;
         ExportHtmlAs: TNotifyEvent;
         ExitEditor: TNotifyEvent;
+        GoToLine: TNotifyEvent;
         ShowPreview: TNotifyEvent;
     end;
 
@@ -46,6 +47,7 @@ end;
 
 function BuildEditorMenu(Owner: TComponent; const Actions: TEditorMenuActions): TMainMenu;
 var
+    EditMenu: TMenuItem;
     FileMenu: TMenuItem;
     ViewMenu: TMenuItem;
 begin
@@ -60,6 +62,9 @@ begin
     AddMenuItem(FileMenu, 'Exportar HTML &como...', ShortCut(VK_F2, [ssCtrl]), Actions.ExportHtmlAs);
     AddMenuItem(FileMenu, '-', 0, nil);
     AddMenuItem(FileMenu, '&Sair', ShortCut(VK_F4, [ssAlt]), Actions.ExitEditor);
+
+    EditMenu := AddTopLevelMenu(Result, '&Editar');
+    AddMenuItem(EditMenu, '&Ir para a linha...', ShortCut(Ord('G'), [ssCtrl]), Actions.GoToLine);
 
     ViewMenu := AddTopLevelMenu(Result, '&Visualizar');
     AddMenuItem(ViewMenu, '&Renderizar Markdown', ShortCut(VK_F9, []), Actions.ShowPreview);

@@ -8,7 +8,7 @@ and package links live in `markdown_editor.lpi`. Production units are under
 `markdown_renderer.pas` renders GitHub Flavored Markdown, and the service units
 handle files and HTML export. FPCUnit suites and their console runner are in
 `tests/`. Build helpers are in `scripts/`. Treat `vendor/` as read-only: its
-MarkdownEngine and WebView4Delphi revisions are Git submodules. Generated files
+MarkdownEngine, WebView4Delphi, and argparser-fp revisions are Git submodules. Generated files
 belong in `bin/`, `lib/`, or `.lazarus/`.
 
 ## Build, Test, and Development Commands

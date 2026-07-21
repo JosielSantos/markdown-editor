@@ -52,7 +52,7 @@
         </CompilerOptions>
       </Item2>
     </BuildModes>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="4">
       <Item1>
         <PackageName Value="LCL"/>
       </Item1>
@@ -62,8 +62,11 @@
       <Item3>
         <PackageName Value="MarkdownEngine"/>
       </Item3>
+      <Item4>
+        <PackageName Value="argparser_fp"/>
+      </Item4>
     </RequiredPackages>
-    <Units Count="7">
+    <Units Count="8">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -98,6 +101,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Html_Export_Service"/>
       </Unit6>
+      <Unit7>
+        <Filename Value="src/command_line.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Command_Line"/>
+      </Unit7>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

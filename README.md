@@ -60,9 +60,11 @@ As bibliotecas são rastreadas na seção `RequiredPackages` de
 - `WebView4Delphi`, para hospedar a visualização WebView2 interna e expor a
   semântica HTML pelas APIs de acessibilidade do Windows;
 - `MarkdownEngine`, da biblioteca BSD `delphi-markdown`, para o parsing
-  GitHub Flavored Markdown.
+  GitHub Flavored Markdown;
+- `argparser_fp`, da biblioteca MIT `argparser-fp`, para argumentos
+  posicionais e a futura inclusão de opções e comandos.
 
-As revisões das duas bibliotecas ficam fixadas como submódulos Git. O script
+As revisões das três bibliotecas ficam fixadas como submódulos Git. O script
 de compilação copia `WebView2Loader.dll` para `bin`; o Runtime do WebView2
 precisa estar instalado no Windows (ele já acompanha versões atuais do Edge e
 do Windows 11).
@@ -97,6 +99,7 @@ O executável é criado em `bin\markdown-editor.exe`. Também é possível abrir
 - `src/main_form.pas`: ciclo de vida do documento e coordenação da interface;
 - `src/preview_form.pas`: diálogo modal de visualização;
 - `src/file_service.pas`: leitura e escrita UTF-8;
+- `src/command_line.pas`: parsing dos argumentos de inicialização;
 - `tests/`: suítes FPCUnit e runner de testes em modo console.
 
 Todos os arquivos Pascal próprios têm menos de 300 linhas e as unidades se

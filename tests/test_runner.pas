@@ -5,6 +5,7 @@ program TestRunner;
 
 uses
     SimpleTestRunner,
+    Test_Command_Line,
     Test_File_Service,
     Test_Markdown_Renderer;
 

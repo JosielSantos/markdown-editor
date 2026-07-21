@@ -20,10 +20,18 @@ if ($null -eq $markdownUnit) {
 }
 $markdownUnits = $markdownUnit.DirectoryName
 
+$argumentParserUnit = Get-ChildItem `
+    (Join-Path $projectRoot 'vendor\argparser-fp\packages\lazarus\lib') `
+    -Recurse -Filter 'argparser.ppu' -File | Select-Object -First 1
+if ($null -eq $argumentParserUnit) {
+    throw 'Unidades compiladas do argparser-fp não foram encontradas.'
+}
+$argumentParserUnits = $argumentParserUnit.DirectoryName
+
 New-Item -ItemType Directory -Force $unitOutput, $binaryOutput | Out-Null
 $testRunnerSource = Join-Path $projectRoot 'tests\test_runner.pas'
 & $fpc '-Mobjfpc' '-Sh' "-Fu$projectRoot\src" `
-    "-Fu$projectRoot\tests" "-Fu$markdownUnits" `
+    "-Fu$projectRoot\tests" "-Fu$markdownUnits" "-Fu$argumentParserUnits" `
     "-FU$unitOutput" "-FE$binaryOutput" $testRunnerSource
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE

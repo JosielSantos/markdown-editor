@@ -1,0 +1,3 @@
+[submodule "vendor/delphi-markdown"]
+	path = vendor/delphi-markdown
+	url = https://github.com/grahamegrieve/delphi-markdown.git

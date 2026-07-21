@@ -12,11 +12,19 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
+$markdownUnit = Get-ChildItem `
+    (Join-Path $projectRoot 'vendor\delphi-markdown\packages\lib') `
+    -Recurse -Filter 'markdownprocessor.ppu' -File | Select-Object -First 1
+if ($null -eq $markdownUnit) {
+    throw 'Unidades compiladas do MarkdownEngine não foram encontradas.'
+}
+$markdownUnits = $markdownUnit.DirectoryName
+
 New-Item -ItemType Directory -Force $unitOutput, $binaryOutput | Out-Null
 $tests = @('test_markdown_renderer.pas', 'test_file_service.pas')
 foreach ($test in $tests) {
     $source = Join-Path $projectRoot "tests\$test"
-    & $fpc '-Mobjfpc' '-Sh' "-Fu$projectRoot\src" `
+    & $fpc '-Mobjfpc' '-Sh' "-Fu$projectRoot\src" "-Fu$markdownUnits" `
         "-FU$unitOutput" "-FE$binaryOutput" $source
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
@@ -29,4 +37,3 @@ foreach ($test in $tests) {
         exit $LASTEXITCODE
     }
 }
-

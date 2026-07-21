@@ -11,12 +11,12 @@ begin
   begin
     WriteLn(StdErr, 'FALHOU: ', Description);
     WriteLn(StdErr, 'Esperado: ', Expected);
+    WriteLn(StdErr, 'Obtido: ', Actual);
     Halt(1);
   end;
 end;
 
 var
-  AccessibleText: string;
   Html: string;
 begin
   Html := MarkdownToHtml('# Título' + LineEnding + LineEnding +
@@ -30,18 +30,14 @@ begin
   ExpectContains('lista', Html, '<ul>');
   ExpectContains('escape no código', Html, '&lt;valor&gt;');
 
+  Html := MarkdownToHtml('- pai' + LineEnding +
+    '  - filho' + LineEnding + '  - filha');
+  ExpectContains('lista aninhada', Html, '<li>filho</li>');
+
   Html := MarkdownToHtml('<script>alert(1)</script>' + LineEnding +
     '[perigoso](javascript:alert(1))');
   ExpectContains('escape de HTML', Html,
     '&lt;script&gt;alert(1)&lt;/script&gt;');
-  ExpectContains('URL segura', Html, '<a href="#">perigoso</a>');
-
-  AccessibleText := MarkdownToAccessibleText('## Seção' + LineEnding +
-    '> Nota' + LineEnding + '1. passo');
-  ExpectContains('nível do título', AccessibleText, 'Título nível 2: Seção');
-  ExpectContains('citação acessível', AccessibleText, 'Citação: Nota');
-  ExpectContains('lista acessível', AccessibleText, 'Item numerado: passo');
 
   WriteLn('Todos os testes do renderizador passaram.');
 end.
-

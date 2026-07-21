@@ -29,20 +29,23 @@ begin
     begin
         try
             AssociateMarkdownFiles(ExpandFileName(ParamStr(0)));
-            MessageBox(
-                0,
-                'As extensões .md e .markdown foram associadas com sucesso para este usuário.',
-                PChar(Application.Title),
-                MB_OK or MB_ICONINFORMATION
-            );
+            if not CommandLineArguments.Quiet then
+                MessageBox(
+                    0,
+                    'As extensões .md e .markdown foram associadas com sucesso para este usuário.',
+                    PChar(Application.Title),
+                    MB_OK or MB_ICONINFORMATION
+                );
         except
             on Error: Exception do
             begin
                 MessageBox(0, PChar(Error.Message), 'Erro ao associar arquivos', MB_OK or MB_ICONERROR);
                 ExitCode := 1;
+                Exit;
             end;
         end;
-        Exit;
+        if not CommandLineArguments.StartApplication then
+            Exit;
     end;
     Application.CreateForm(TEditorForm, EditorForm);
     if CommandLineArguments.MarkdownFileName <> '' then

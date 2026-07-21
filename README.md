@@ -44,6 +44,15 @@ para o usuário atual, execute:
 
 O comando mostra o resultado e termina sem abrir a janela do editor.
 
+Para associar silenciosamente e iniciar o editor em seguida, use:
+
+```powershell
+.\bin\markdown-editor.exe associate-files --quiet --start
+```
+
+`--quiet` oculta somente a confirmação de sucesso; mensagens de erro continuam
+sendo exibidas. `--start` abre a janela do editor depois da associação.
+
 O conteúdo é processado pela biblioteca `MarkdownEngine` com as extensões
 GitHub Flavored Markdown habilitadas, incluindo tabelas, texto riscado e
 estruturas como listas aninhadas que não eram tratadas corretamente pelo

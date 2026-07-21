@@ -13,6 +13,7 @@ type
     published
         procedure AcceptsNoArguments;
         procedure ParsesAssociateFilesCommand;
+        procedure ParsesQuietStartedAssociationCommand;
         procedure ParsesMarkdownFileArgument;
         procedure RejectsArgumentsAfterCommand;
         procedure RejectsUnknownOptions;
@@ -30,6 +31,8 @@ var
 begin
     ParsedArguments := ParseArguments([]);
     AssertEquals(Ord(claOpenEditor), Ord(ParsedArguments.Action));
+    AssertFalse(ParsedArguments.Quiet);
+    AssertFalse(ParsedArguments.StartApplication);
     AssertEquals('', ParsedArguments.MarkdownFileName);
     AssertEquals('', ParsedArguments.ErrorMessage);
 end;
@@ -40,6 +43,20 @@ var
 begin
     ParsedArguments := ParseArguments(['associate-files']);
     AssertEquals(Ord(claAssociateFiles), Ord(ParsedArguments.Action));
+    AssertFalse(ParsedArguments.Quiet);
+    AssertFalse(ParsedArguments.StartApplication);
+    AssertEquals('', ParsedArguments.MarkdownFileName);
+    AssertEquals('', ParsedArguments.ErrorMessage);
+end;
+
+procedure TCommandLineTests.ParsesQuietStartedAssociationCommand;
+var
+    ParsedArguments: TCommandLineArguments;
+begin
+    ParsedArguments := ParseArguments(['associate-files', '--quiet', '--start']);
+    AssertEquals(Ord(claAssociateFiles), Ord(ParsedArguments.Action));
+    AssertTrue(ParsedArguments.Quiet);
+    AssertTrue(ParsedArguments.StartApplication);
     AssertEquals('', ParsedArguments.MarkdownFileName);
     AssertEquals('', ParsedArguments.ErrorMessage);
 end;
@@ -50,6 +67,8 @@ var
 begin
     ParsedArguments := ParseArguments(['C:\Meus documentos\anotações.md']);
     AssertEquals(Ord(claOpenEditor), Ord(ParsedArguments.Action));
+    AssertFalse(ParsedArguments.Quiet);
+    AssertFalse(ParsedArguments.StartApplication);
     AssertEquals('C:\Meus documentos\anotações.md', ParsedArguments.MarkdownFileName);
     AssertEquals('', ParsedArguments.ErrorMessage);
 end;

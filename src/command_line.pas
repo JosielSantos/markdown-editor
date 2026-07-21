@@ -10,6 +10,8 @@ type
 
     TCommandLineArguments = record
         Action: TCommandLineAction;
+        Quiet: Boolean;
+        StartApplication: Boolean;
         MarkdownFileName: string;
         ErrorMessage: string;
     end;
@@ -29,6 +31,8 @@ uses
 const
     AssociateFilesCommandName = 'associate-files';
     FileArgumentName = 'file';
+    QuietOptionName = 'quiet';
+    StartOptionName = 'start';
 
 function CopyArguments(const Arguments: array of string): TStringDynArray;
 var
@@ -44,6 +48,8 @@ procedure ConfigureParser(var Parser: TArgParser);
 begin
     Parser.Init;
     Parser.SetUsage('markdown-editor [opções] [associate-files | arquivo.md]');
+    Parser.AddBoolean(#0, QuietOptionName, 'Não exibe a confirmação de sucesso');
+    Parser.AddBoolean(#0, StartOptionName, 'Inicia o editor depois de executar o comando');
     Parser.AddPositional(FileArgumentName, atString, 'Comando ou arquivo Markdown a abrir');
 end;
 
@@ -54,6 +60,8 @@ var
     UnparsedArguments: TStringDynArray;
 begin
     Result.Action := claOpenEditor;
+    Result.Quiet := False;
+    Result.StartApplication := False;
     Result.MarkdownFileName := '';
     Result.ErrorMessage := '';
     FillChar(Parser, SizeOf(Parser), 0);
@@ -63,6 +71,8 @@ begin
     try
         ParserArguments := CopyArguments(Arguments);
         Parser.ParseKnownArgs(ParserArguments, UnparsedArguments);
+        Result.Quiet := Parser.GetBoolean(QuietOptionName);
+        Result.StartApplication := Parser.GetBoolean(StartOptionName);
         if Parser.HasError then
             Result.ErrorMessage := Parser.Error
         else if Length(UnparsedArguments) > 0 then

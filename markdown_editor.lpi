@@ -57,7 +57,7 @@
         <PackageName Value="LCL"/>
       </Item1>
       <Item2>
-        <PackageName Value="TurboPowerIPro"/>
+        <PackageName Value="WebView4Delphi"/>
       </Item2>
       <Item3>
         <PackageName Value="MarkdownEngine"/>

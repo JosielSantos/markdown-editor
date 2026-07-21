@@ -1,3 +1,6 @@
 [submodule "vendor/delphi-markdown"]
 	path = vendor/delphi-markdown
 	url = https://github.com/grahamegrieve/delphi-markdown.git
+[submodule "vendor/webview4delphi"]
+	path = vendor/webview4delphi
+	url = https://github.com/salvadordf/WebView4Delphi.git

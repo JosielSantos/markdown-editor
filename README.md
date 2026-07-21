@@ -1,8 +1,8 @@
 # Editor Markdown Acessível
 
 Editor e renderizador Markdown autocontido para Windows, escrito em Free
-Pascal. O MVP usa controles Win32 nativos por meio do Lazarus LCL e não abre
-navegador, WebView ou servidor local.
+Pascal. O MVP usa controles Win32 nativos por meio do Lazarus LCL e exibe a
+prévia em um WebView2 interno, sem abrir navegador externo ou servidor local.
 
 ## Funcionalidades
 
@@ -40,8 +40,9 @@ parser inicial do MVP.
 
 - Editor, menus e diálogos de arquivo usam controles nativos do Windows.
 - O editor possui nome, descrição e papel de acessibilidade explícitos.
-- A visualização é um único diálogo interno somente leitura; `Esc` volta ao
-  editor.
+- A visualização usa a árvore semântica HTML do Microsoft Edge WebView2 para
+  expor títulos, listas, links e caixas de seleção ao leitor de tela.
+- A visualização é um diálogo interno somente leitura; `Esc` volta ao editor.
 - Não há barras de ferramentas ou controles de formatação que aumentem a
   quantidade de paradas de tabulação.
 
@@ -49,18 +50,21 @@ parser inicial do MVP.
 
 - Free Pascal 3.2.2 ou posterior
 - Lazarus 4.8 ou posterior com o widgetset Win32
+- Microsoft Edge WebView2 Runtime
 
 As bibliotecas são rastreadas na seção `RequiredPackages` de
 `markdown_editor.lpi`, usando o gerenciador de pacotes do Lazarus:
 
 - `LCL`, para a interface nativa;
-- `TurboPowerIPro`, distribuído com o Lazarus, para a visualização HTML
-  interna;
+- `WebView4Delphi`, para hospedar a visualização WebView2 interna e expor a
+  semântica HTML pelas APIs de acessibilidade do Windows;
 - `MarkdownEngine`, da biblioteca BSD `delphi-markdown`, para o parsing
-  GitHub Flavored Markdown. A revisão usada fica fixada como submódulo Git.
+  GitHub Flavored Markdown.
 
-As dependências são vinculadas ao executável; nenhuma DLL adicional nem
-componente de navegador precisa ser distribuído.
+As revisões das duas bibliotecas ficam fixadas como submódulos Git. O script
+de compilação copia `WebView2Loader.dll` para `bin`; o Runtime do WebView2
+precisa estar instalado no Windows (ele já acompanha versões atuais do Edge e
+do Windows 11).
 
 ## Compilar e testar
 

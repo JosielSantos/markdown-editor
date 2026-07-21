@@ -8,6 +8,14 @@ function Resolve-Lazbuild {
 
     $lazbuildCommand = Get-Command lazbuild -ErrorAction SilentlyContinue
     if ($null -ne $lazbuildCommand) {
+        $shimFile = [System.IO.Path]::ChangeExtension(
+            $lazbuildCommand.Source, '.shim')
+        if (Test-Path $shimFile) {
+            $shimDefinition = Get-Content $shimFile -Raw
+            if ($shimDefinition -match 'path\s*=\s*"([^"]+)"') {
+                return $Matches[1]
+            }
+        }
         return $lazbuildCommand.Source
     }
 

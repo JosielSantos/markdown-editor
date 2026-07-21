@@ -10,6 +10,7 @@ function MarkdownToHtml(const Markdown: string): string;
 implementation
 
 uses
+    Heading_Anchor_Service,
     MarkdownCommonMark,
     SysUtils;
 
@@ -45,7 +46,7 @@ end;
 
 function RenderMarkdownFragment(const Markdown: string): string;
 begin
-    Result := RenderTaskListItems(TCommonMarkEngine.Process(Markdown, True));
+    Result := AddHeadingAnchors(RenderTaskListItems(TCommonMarkEngine.Process(Markdown, True)));
 end;
 
 function MarkdownToHtml(const Markdown: string): string;

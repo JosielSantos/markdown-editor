@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="9">
+    <Units Count="10">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -111,6 +111,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Link_Navigation"/>
       </Unit8>
+      <Unit9>
+        <Filename Value="src/heading_anchor_service.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Heading_Anchor_Service"/>
+      </Unit9>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

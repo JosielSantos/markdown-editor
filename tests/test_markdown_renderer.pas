@@ -14,6 +14,7 @@ type
         procedure AssertHtmlContains(const Description, Html, Expected: string);
     published
         procedure RendersCommonMarkdown;
+        procedure AddsGitHubStyleHeadingAnchors;
         procedure RendersGitHubExtensions;
         procedure RendersNestedLists;
         procedure RendersTaskLists;
@@ -31,6 +32,15 @@ uses
 procedure TMarkdownRendererTests.AssertHtmlContains(const Description, Html, Expected: string);
 begin
     AssertTrue(Description, ContainsStr(Html, Expected));
+end;
+
+procedure TMarkdownRendererTests.AddsGitHubStyleHeadingAnchors;
+var
+    Html: string;
+begin
+    Html := MarkdownToHtml('## WebView4Delphi' + LineEnding + '## WebView4Delphi');
+    AssertHtmlContains('primeira âncora', Html, '<h2 id="webview4delphi">WebView4Delphi</h2>');
+    AssertHtmlContains('âncora repetida', Html, '<h2 id="webview4delphi-1">WebView4Delphi</h2>');
 end;
 
 procedure TMarkdownRendererTests.RendersCommonMarkdown;
@@ -54,7 +64,7 @@ begin
                 + LineEnding
                 + '```'
         );
-    AssertHtmlContains('título', Html, '<h1>Título</h1>');
+    AssertHtmlContains('título', Html, '<h1 id="título">Título</h1>');
     AssertHtmlContains('negrito', Html, '<strong>negrito</strong>');
     AssertHtmlContains('itálico', Html, '<em>itálico</em>');
     AssertHtmlContains('código em linha', Html, '<code>código</code>');

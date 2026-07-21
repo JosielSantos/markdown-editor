@@ -41,8 +41,8 @@ var
 implementation
 
 uses
-  Controls, Dialogs, Editor_Menu, File_Service, Markdown_Renderer,
-  Preview_Form, SysUtils;
+  Controls, Dialogs, Editor_Menu, File_Service, LCLIntf, LCLType,
+  Markdown_Renderer, Preview_Form, SysUtils;
 
 procedure TEditorForm.CreateEditor;
 begin
@@ -159,16 +159,17 @@ end;
 
 function TEditorForm.HandleUnsavedChanges: Boolean;
 var
-  Choice: TModalResult;
+  Choice: Integer;
 begin
   if not DocumentModified then
     Exit(True);
-  Choice := MessageDlg('Alterações não salvas',
-    'Deseja salvar as alterações antes de continuar?', mtConfirmation,
-    [mbYes, mbNo, mbCancel], 0);
+  Choice := LCLIntf.MessageBox(Handle,
+    'Deseja salvar as alterações antes de continuar?',
+    'Alterações não salvas',
+    MB_ICONQUESTION or MB_YESNOCANCEL or MB_DEFBUTTON1);
   case Choice of
-    mrYes: Result := SaveCurrentDocument;
-    mrNo: Result := True;
+    IDYES: Result := SaveCurrentDocument;
+    IDNO: Result := True;
   else
     Result := False;
   end;

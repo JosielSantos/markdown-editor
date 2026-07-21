@@ -1,0 +1,13 @@
+bin/
+lib/
+.lazarus/
+*.bak
+*.compiled
+*.exe
+*.ico
+*.o
+*.or
+*.ppu
+*.res
+*.rst
+*.session

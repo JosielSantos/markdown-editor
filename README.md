@@ -51,6 +51,7 @@ parser inicial do MVP.
 - Free Pascal 3.2.2 ou posterior
 - Lazarus 4.8 ou posterior com o widgetset Win32
 - Microsoft Edge WebView2 Runtime
+- pasfmt 0.7.0 ou posterior disponível no `PATH`
 
 As bibliotecas são rastreadas na seção `RequiredPackages` de
 `markdown_editor.lpi`, usando o gerenciador de pacotes do Lazarus:
@@ -78,9 +79,13 @@ Em um clone já existente, execute `git submodule update --init`. Depois, com
 `lazbuild` no `PATH` ou `LazarusDir` definido:
 
 ```powershell
+.\scripts\format.ps1
 .\scripts\build.ps1 -Mode Release
 .\scripts\test.ps1
 ```
+
+Use `.\scripts\format.ps1 -Check` para somente verificar a formatação. As
+regras ficam versionadas em `pasfmt.toml`; o script não formata `vendor/`.
 
 O executável é criado em `bin\markdown-editor.exe`. Também é possível abrir
 `markdown_editor.lpi` no Lazarus e selecionar **Executar > Compilar**.

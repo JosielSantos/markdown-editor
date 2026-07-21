@@ -1,19 +1,22 @@
 program TestRunner;
 
-{$mode objfpc}{$H+}
+{$MODE objfpc}
+{$H+}
 
 uses
-  SimpleTestRunner, Test_File_Service, Test_Markdown_Renderer;
+    SimpleTestRunner,
+    Test_File_Service,
+    Test_Markdown_Renderer;
 
 var
-  Runner: TTestRunner;
+    Runner: TTestRunner;
 begin
-  Runner := TTestRunner.Create(nil);
-  try
-    Runner.Initialize;
-    Runner.Title := 'Testes do Editor Markdown Acessível';
-    Runner.Run;
-  finally
-    Runner.Free;
-  end;
+    Runner := TTestRunner.Create(nil);
+    try
+        Runner.Initialize;
+        Runner.Title := 'Testes do Editor Markdown Acessível';
+        Runner.Run;
+    finally
+        Runner.Free;
+    end;
 end.

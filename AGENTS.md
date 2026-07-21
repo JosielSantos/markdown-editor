@@ -19,24 +19,29 @@ Initialize dependencies after cloning:
 git submodule update --init
 .\scripts\build.ps1 -Mode Debug
 .\scripts\build.ps1 -Mode Release
+.\scripts\format.ps1
 .\scripts\test.ps1
 ```
 
 The build script registers Lazarus packages and copies `WebView2Loader.dll` to
-`bin/`. The test script builds the application, compiles the FPCUnit suite,
-and runs its console runner. Launch locally with
+`bin/`. The format script runs pasfmt only on project-owned Pascal sources;
+use `-Check` to verify formatting without writes. The test script builds the
+application, compiles the FPCUnit suite, and runs its console runner. Launch locally with
 `.\bin\markdown-editor.exe .\example.md`. Development requires FPC 3.2.2+,
 Lazarus 4.8+ with Win32 LCL, and the Microsoft Edge WebView2 Runtime.
 
 ## Coding Style & Naming Conventions
 
-Use Object Pascal mode, two-space indentation, clear names, and small routines
-with one purpose. Keep project-owned Pascal files below 300 lines. File names
-use `snake_case.pas`; units and types use `Main_Form` and `TEditorForm` style.
-Prefer DRY, KISS implementations and native LCL/Windows behavior. Never use
-`MessageDlg`; use `LCLIntf.MessageBox` for messages and confirmations so native
-accessible button labels are preserved. No automatic formatter is configured,
-so match the surrounding layout and run `git diff --check` before committing.
+Use Object Pascal mode, clear names, and small routines with one purpose. Keep
+project-owned Pascal files below 300 functional lines; do not count blank lines
+or structural-only lines such as `begin` and `end`. File names use
+`snake_case.pas`; units and types use `Main_Form` and `TEditorForm` style.
+pasfmt enforces LF, UTF-8, 120-column lines, spaces instead of tabs, four-space
+indentation, four-space continuations, and `begin` on its own line. Prefer DRY,
+KISS implementations and native LCL/Windows behavior. Never use `MessageDlg`;
+use `LCLIntf.MessageBox` for messages and confirmations so native accessible
+button labels are preserved. Always run `.\scripts\format.ps1` before every
+commit, followed by `git diff --check`.
 
 ## Testing Guidelines
 

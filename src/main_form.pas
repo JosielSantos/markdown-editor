@@ -224,6 +224,7 @@ procedure TEditorForm.NewDocument(Sender: TObject);
 begin
     if not HandleUnsavedChanges then
         Exit;
+    Session.RememberFilePosition(CurrentFileName);
     EditorMemo.Clear;
     CurrentFileName := '';
     MarkDocumentSaved;
@@ -247,11 +248,13 @@ var
 begin
     Result := False;
     ResolvedFileName := ExpandFileName(FileName);
+    Session.RememberFilePosition(CurrentFileName);
     try
         EditorMemo.Text := ReadUtf8TextFile(ResolvedFileName);
         CurrentFileName := ResolvedFileName;
         MarkDocumentSaved;
         RecentFiles.Remember(CurrentFileName);
+        Session.RestoreFilePosition(CurrentFileName);
         Result := True;
     except
         on Error: Exception do
@@ -305,6 +308,7 @@ begin
         WriteUtf8TextFile(CurrentFileName, EditorMemo.Text);
         MarkDocumentSaved;
         RecentFiles.Remember(CurrentFileName);
+        Session.RememberFilePosition(CurrentFileName);
         Result := True;
     except
         on Error: Exception do
@@ -322,6 +326,7 @@ var
     PreviousFileName: string;
 begin
     PreviousFileName := CurrentFileName;
+    Session.RememberFilePosition(PreviousFileName);
     CurrentFileName := '';
     if not ChooseMarkdownSavePath then
     begin

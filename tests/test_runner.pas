@@ -8,6 +8,7 @@ uses
     Test_Command_Line,
     Test_Document_State,
     Test_File_Association_Service,
+    Test_File_Position_History,
     Test_File_Service,
     Test_Link_Navigation,
     Test_Line_Navigation,

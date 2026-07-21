@@ -11,7 +11,8 @@ uses
     Test_File_Service,
     Test_Link_Navigation,
     Test_Line_Navigation,
-    Test_Markdown_Renderer;
+    Test_Markdown_Renderer,
+    Test_Recent_Files;
 
 var
     Runner: TTestRunner;

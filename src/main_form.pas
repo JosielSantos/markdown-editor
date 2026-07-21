@@ -8,6 +8,7 @@ interface
 uses
     Classes,
     Forms,
+    Recent_Files_Controller,
     StdCtrls;
 
 type
@@ -16,6 +17,7 @@ type
         CurrentFileName: string;
         EditorMemo: TMemo;
         LastSavedContent: string;
+        RecentFiles: TRecentFilesController;
         procedure CanCloseEditor(Sender: TObject; var CanClose: Boolean);
         function ChooseMarkdownSavePath: Boolean;
         procedure CreateEditor;
@@ -30,6 +32,7 @@ type
         procedure MarkDocumentSaved;
         procedure NewDocument(Sender: TObject);
         procedure OpenMarkdown(Sender: TObject);
+        procedure OpenRecentMarkdown(const FileName: string);
         function SaveCurrentDocument: Boolean;
         procedure SaveMarkdown(Sender: TObject);
         procedure SaveMarkdownAs(Sender: TObject);
@@ -38,6 +41,7 @@ type
         procedure UpdateWindowTitle;
     public
         constructor Create(TheOwner: TComponent); override;
+        destructor Destroy; override;
         procedure InitializeMarkdownDocument(const FileName: string);
         function LoadMarkdownDocument(const FileName: string): Boolean;
     end;
@@ -52,12 +56,14 @@ uses
     Dialogs,
     Document_State,
     Editor_Menu,
+    Editor_Settings,
     File_Service,
     Go_To_Line_Dialog,
     Html_Export_Service,
     LCLIntf,
     LCLType,
     Line_Navigation,
+    Menus,
     Preview_Form,
     SysUtils;
 
@@ -81,6 +87,7 @@ end;
 procedure TEditorForm.CreateMenuBar;
 var
     Actions: TEditorMenuActions;
+    RecentFilesMenu: TMenuItem;
 begin
     Actions.NewDocument := @NewDocument;
     Actions.OpenDocument := @OpenMarkdown;
@@ -91,7 +98,8 @@ begin
     Actions.ExitEditor := @ExitEditor;
     Actions.GoToLine := @GoToLine;
     Actions.ShowPreview := @ShowPreview;
-    Menu := BuildEditorMenu(Self, Actions);
+    Menu := BuildEditorMenu(Self, Actions, RecentFilesMenu);
+    RecentFiles := TRecentFilesController.Create(Self, RecentFilesMenu, @OpenRecentMarkdown, DefaultSettingsFileName);
 end;
 
 constructor TEditorForm.Create(TheOwner: TComponent);
@@ -107,6 +115,12 @@ begin
     LastSavedContent := '';
     OnCloseQuery := @CanCloseEditor;
     UpdateWindowTitle;
+end;
+
+destructor TEditorForm.Destroy;
+begin
+    RecentFiles.Free;
+    inherited Destroy;
 end;
 
 procedure TEditorForm.CanCloseEditor(Sender: TObject; var CanClose: Boolean);
@@ -232,6 +246,7 @@ begin
         EditorMemo.Text := ReadUtf8TextFile(ResolvedFileName);
         CurrentFileName := ResolvedFileName;
         MarkDocumentSaved;
+        RecentFiles.Remember(CurrentFileName);
         Result := True;
     except
         on Error: Exception do
@@ -264,6 +279,13 @@ begin
     end;
 end;
 
+procedure TEditorForm.OpenRecentMarkdown(const FileName: string);
+begin
+    if not HandleUnsavedChanges then
+        Exit;
+    LoadMarkdownDocument(FileName);
+end;
+
 function TEditorForm.SaveCurrentDocument: Boolean;
 begin
     Result := False;
@@ -272,6 +294,7 @@ begin
     try
         WriteUtf8TextFile(CurrentFileName, EditorMemo.Text);
         MarkDocumentSaved;
+        RecentFiles.Remember(CurrentFileName);
         Result := True;
     except
         on Error: Exception do

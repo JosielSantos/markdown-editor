@@ -25,6 +25,7 @@ type
         procedure ExportHtml(Sender: TObject);
         procedure ExportHtmlAs(Sender: TObject);
         procedure ExportHtmlToFile(const HtmlFileName: string);
+        procedure GoToLine(Sender: TObject);
         function HandleUnsavedChanges: Boolean;
         procedure MarkDocumentSaved;
         procedure NewDocument(Sender: TObject);
@@ -52,6 +53,7 @@ uses
     Document_State,
     Editor_Menu,
     File_Service,
+    Go_To_Line_Dialog,
     Html_Export_Service,
     LCLIntf,
     LCLType,
@@ -86,6 +88,7 @@ begin
     Actions.ExportHtml := @ExportHtml;
     Actions.ExportHtmlAs := @ExportHtmlAs;
     Actions.ExitEditor := @ExitEditor;
+    Actions.GoToLine := @GoToLine;
     Actions.ShowPreview := @ShowPreview;
     Menu := BuildEditorMenu(Self, Actions);
 end;
@@ -164,6 +167,16 @@ begin
         on Error: Exception do
             ShowErrorMessage('Erro ao exportar HTML', Error.Message);
     end;
+end;
+
+procedure TEditorForm.GoToLine(Sender: TObject);
+var
+    SelectedLine: Integer;
+begin
+    if not ChooseLineNumber(Self, EditorMemo.CaretPos.Y + 1, EditorMemo.Lines.Count, SelectedLine) then
+        Exit;
+    EditorMemo.CaretPos := Point(0, SelectedLine - 1);
+    EditorMemo.SetFocus;
 end;
 
 function TEditorForm.HandleUnsavedChanges: Boolean;

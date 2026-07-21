@@ -1,5 +1,11 @@
 # Avisos de terceiros
 
+## Índice
+
+- [WebView4Delphi](#webview4delphi)
+- [delphi-markdown / MarkdownEngine](#delphi-markdown--markdownengine)
+- [argparser-fp](#argparser-fp)
+
 ## WebView4Delphi
 
 Fonte: <https://github.com/salvadordf/WebView4Delphi>

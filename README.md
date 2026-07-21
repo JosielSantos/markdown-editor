@@ -18,7 +18,8 @@ prévia em um WebView2 interno, sem abrir navegador externo ou servidor local.
 
 Todos os comandos também estão disponíveis na barra de menus. Ao fechar,
 criar ou abrir outro documento, o editor pergunta o que fazer com alterações
-não salvas.
+não salvas. Se o conteúdo voltar a ser idêntico à última versão salva, o
+documento deixa de ser marcado como alterado.
 
 Com um Markdown nomeado, `F2` grava o HTML no mesmo diretório e troca a
 extensão por `.html`. Sem um arquivo atual, `F2` abre o diálogo de exportação.

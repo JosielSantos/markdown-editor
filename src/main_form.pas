@@ -14,8 +14,8 @@ type
     TEditorForm = class(TForm)
     private
         CurrentFileName: string;
-        DocumentModified: Boolean;
         EditorMemo: TMemo;
+        LastSavedContent: string;
         procedure CanCloseEditor(Sender: TObject; var CanClose: Boolean);
         function ChooseMarkdownSavePath: Boolean;
         procedure CreateEditor;
@@ -26,6 +26,7 @@ type
         procedure ExportHtmlAs(Sender: TObject);
         procedure ExportHtmlToFile(const HtmlFileName: string);
         function HandleUnsavedChanges: Boolean;
+        procedure MarkDocumentSaved;
         procedure NewDocument(Sender: TObject);
         procedure OpenMarkdown(Sender: TObject);
         function SaveCurrentDocument: Boolean;
@@ -48,6 +49,7 @@ implementation
 uses
     Controls,
     Dialogs,
+    Document_State,
     Editor_Menu,
     File_Service,
     Html_Export_Service,
@@ -98,7 +100,7 @@ begin
     CreateMenuBar;
     CreateEditor;
     CurrentFileName := '';
-    DocumentModified := False;
+    LastSavedContent := '';
     OnCloseQuery := @CanCloseEditor;
     UpdateWindowTitle;
 end;
@@ -130,7 +132,6 @@ end;
 
 procedure TEditorForm.EditorChanged(Sender: TObject);
 begin
-    DocumentModified := True;
     UpdateWindowTitle;
 end;
 
@@ -169,7 +170,7 @@ function TEditorForm.HandleUnsavedChanges: Boolean;
 var
     Choice: Integer;
 begin
-    if not DocumentModified then
+    if not HasContentChanged(EditorMemo.Text, LastSavedContent) then
         Exit(True);
     Choice :=
         LCLIntf.MessageBox(
@@ -192,8 +193,7 @@ begin
         Exit;
     EditorMemo.Clear;
     CurrentFileName := '';
-    DocumentModified := False;
-    UpdateWindowTitle;
+    MarkDocumentSaved;
 end;
 
 procedure TEditorForm.InitializeMarkdownDocument(const FileName: string);
@@ -205,8 +205,7 @@ begin
     end;
     EditorMemo.Clear;
     CurrentFileName := ExpandFileName(FileName);
-    DocumentModified := False;
-    UpdateWindowTitle;
+    MarkDocumentSaved;
 end;
 
 function TEditorForm.LoadMarkdownDocument(const FileName: string): Boolean;
@@ -218,13 +217,18 @@ begin
     try
         EditorMemo.Text := ReadUtf8TextFile(ResolvedFileName);
         CurrentFileName := ResolvedFileName;
-        DocumentModified := False;
-        UpdateWindowTitle;
+        MarkDocumentSaved;
         Result := True;
     except
         on Error: Exception do
             ShowErrorMessage('Erro ao abrir arquivo', Error.Message);
     end;
+end;
+
+procedure TEditorForm.MarkDocumentSaved;
+begin
+    LastSavedContent := EditorMemo.Text;
+    UpdateWindowTitle;
 end;
 
 procedure TEditorForm.OpenMarkdown(Sender: TObject);
@@ -253,8 +257,7 @@ begin
         Exit;
     try
         WriteUtf8TextFile(CurrentFileName, EditorMemo.Text);
-        DocumentModified := False;
-        UpdateWindowTitle;
+        MarkDocumentSaved;
         Result := True;
     except
         on Error: Exception do
@@ -306,7 +309,7 @@ begin
         DocumentName := 'Sem título'
     else
         DocumentName := ExtractFileName(CurrentFileName);
-    if DocumentModified then
+    if HasContentChanged(EditorMemo.Text, LastSavedContent) then
         DocumentName := DocumentName + ' *';
     Caption := DocumentName + ' — Markdown Editor';
 end;

@@ -92,7 +92,7 @@ O executável é criado em `bin\markdown-editor.exe`. Também é possível abrir
 - `src/main_form.pas`: ciclo de vida do documento e coordenação da interface;
 - `src/preview_form.pas`: diálogo modal de visualização;
 - `src/file_service.pas`: leitura e escrita UTF-8;
-- `tests/`: testes executáveis sem framework externo.
+- `tests/`: suítes FPCUnit e runner de testes em modo console.
 
 Todos os arquivos Pascal próprios têm menos de 300 linhas e as unidades se
 mantêm focadas em uma responsabilidade. O código de terceiros permanece sem

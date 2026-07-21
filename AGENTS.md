@@ -6,8 +6,8 @@ The application entry point is `markdown_editor.lpr`; Lazarus project settings
 and package links live in `markdown_editor.lpi`. Production units are under
 `src/`, with one responsibility per file: `main_form.pas` coordinates the UI,
 `markdown_renderer.pas` renders GitHub Flavored Markdown, and the service units
-handle files and HTML export. Functional tests are standalone Pascal programs
-in `tests/`. Build helpers are in `scripts/`. Treat `vendor/` as read-only: its
+handle files and HTML export. FPCUnit suites and their console runner are in
+`tests/`. Build helpers are in `scripts/`. Treat `vendor/` as read-only: its
 MarkdownEngine and WebView4Delphi revisions are Git submodules. Generated files
 belong in `bin/`, `lib/`, or `.lazarus/`.
 
@@ -23,8 +23,8 @@ git submodule update --init
 ```
 
 The build script registers Lazarus packages and copies `WebView2Loader.dll` to
-`bin/`. The test script builds the application, compiles each test with FPC,
-and runs the resulting executables. Launch locally with
+`bin/`. The test script builds the application, compiles the FPCUnit suite,
+and runs its console runner. Launch locally with
 `.\bin\markdown-editor.exe .\example.md`. Development requires FPC 3.2.2+,
 Lazarus 4.8+ with Win32 LCL, and the Microsoft Edge WebView2 Runtime.
 
@@ -40,10 +40,12 @@ so match the surrounding layout and run `git diff --check` before committing.
 
 ## Testing Guidelines
 
-Tests use no external framework. Name new programs `test_<feature>.pas`, make
-failures return a nonzero exit code, and add them to `scripts/test.ps1`. Cover
-parser and file-service behavior automatically. Screen-reader verification is
-manual and should be reported in the pull request when UI behavior changes.
+Use FPCUnit for every automated test. Name test units `test_<feature>.pas`,
+derive test classes from `TTestCase`, publish test methods, and register each
+class with `RegisterTest`. Add new test units to `tests/test_runner.pas`; the
+runner must return a nonzero exit code on failure. Cover parser and file-service
+behavior automatically. Screen-reader verification remains manual and should
+be reported in the pull request when UI behavior changes.
 
 ## Commit & Pull Request Guidelines
 

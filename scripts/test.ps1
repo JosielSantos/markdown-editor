@@ -21,19 +21,16 @@ if ($null -eq $markdownUnit) {
 $markdownUnits = $markdownUnit.DirectoryName
 
 New-Item -ItemType Directory -Force $unitOutput, $binaryOutput | Out-Null
-$tests = @('test_markdown_renderer.pas', 'test_file_service.pas')
-foreach ($test in $tests) {
-    $source = Join-Path $projectRoot "tests\$test"
-    & $fpc '-Mobjfpc' '-Sh' "-Fu$projectRoot\src" "-Fu$markdownUnits" `
-        "-FU$unitOutput" "-FE$binaryOutput" $source
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
-    }
+$testRunnerSource = Join-Path $projectRoot 'tests\test_runner.pas'
+& $fpc '-Mobjfpc' '-Sh' "-Fu$projectRoot\src" `
+    "-Fu$projectRoot\tests" "-Fu$markdownUnits" `
+    "-FU$unitOutput" "-FE$binaryOutput" $testRunnerSource
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
 
-    $executable = Join-Path $binaryOutput `
-        (([IO.Path]::GetFileNameWithoutExtension($test)) + '.exe')
-    & $executable
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
-    }
+$testRunner = Join-Path $binaryOutput 'test_runner.exe'
+& $testRunner
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
 }

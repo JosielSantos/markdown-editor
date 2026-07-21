@@ -1,21 +1,37 @@
-program TestMarkdownRenderer;
+unit Test_Markdown_Renderer;
 
 {$mode objfpc}{$H+}
 
-uses
-  Markdown_Renderer, StrUtils, SysUtils;
+interface
 
-procedure ExpectContains(const Description, Actual, Expected: string);
-begin
-  if not ContainsStr(Actual, Expected) then
-  begin
-    WriteLn(StdErr, 'FALHOU: ', Description);
-    WriteLn(StdErr, 'Esperado: ', Expected);
-    WriteLn(StdErr, 'Obtido: ', Actual);
-    Halt(1);
+uses
+  FpcUnit;
+
+type
+  TMarkdownRendererTests = class(TTestCase)
+  private
+    procedure AssertHtmlContains(const Description, Html,
+      Expected: string);
+  published
+    procedure RendersCommonMarkdown;
+    procedure RendersGitHubExtensions;
+    procedure RendersNestedLists;
+    procedure RendersTaskLists;
+    procedure SanitizesUnsafeHtml;
   end;
+
+implementation
+
+uses
+  Markdown_Renderer, StrUtils, SysUtils, TestRegistry;
+
+procedure TMarkdownRendererTests.AssertHtmlContains(const Description,
+  Html, Expected: string);
+begin
+  AssertTrue(Description, ContainsStr(Html, Expected));
 end;
 
+procedure TMarkdownRendererTests.RendersCommonMarkdown;
 var
   Html: string;
 begin
@@ -23,30 +39,53 @@ begin
     'Texto com **negrito**, *itálico* e `código`.' + LineEnding +
     '- primeiro' + LineEnding + '- segundo' + LineEnding +
     '```pascal' + LineEnding + '<valor>' + LineEnding + '```');
-  ExpectContains('título', Html, '<h1>Título</h1>');
-  ExpectContains('negrito', Html, '<strong>negrito</strong>');
-  ExpectContains('itálico', Html, '<em>itálico</em>');
-  ExpectContains('código em linha', Html, '<code>código</code>');
-  ExpectContains('lista', Html, '<ul>');
-  ExpectContains('escape no código', Html, '&lt;valor&gt;');
+  AssertHtmlContains('título', Html, '<h1>Título</h1>');
+  AssertHtmlContains('negrito', Html, '<strong>negrito</strong>');
+  AssertHtmlContains('itálico', Html, '<em>itálico</em>');
+  AssertHtmlContains('código em linha', Html, '<code>código</code>');
+  AssertHtmlContains('lista', Html, '<ul>');
+  AssertHtmlContains('escape no código', Html, '&lt;valor&gt;');
+end;
 
+procedure TMarkdownRendererTests.RendersGitHubExtensions;
+var
+  Html: string;
+begin
+  Html := MarkdownToHtml('~~texto removido~~');
+  AssertHtmlContains('texto riscado', Html, '<del>texto removido</del>');
+end;
+
+procedure TMarkdownRendererTests.RendersNestedLists;
+var
+  Html: string;
+begin
   Html := MarkdownToHtml('- pai' + LineEnding +
     '  - filho' + LineEnding + '  - filha');
-  ExpectContains('lista aninhada', Html, '<li>filho</li>');
+  AssertHtmlContains('lista aninhada', Html, '<li>filho</li>');
+end;
 
+procedure TMarkdownRendererTests.RendersTaskLists;
+var
+  Html: string;
+begin
   Html := MarkdownToHtml('* [] Tarefa1' + LineEnding + '* [x] Tarefa2');
-  ExpectContains('tarefa desmarcada', Html,
+  AssertHtmlContains('tarefa desmarcada', Html,
     '<li><input type="checkbox" disabled> Tarefa1</li>');
-  ExpectContains('tarefa marcada', Html,
+  AssertHtmlContains('tarefa marcada', Html,
     '<li><input type="checkbox" checked disabled> Tarefa2</li>');
+end;
 
-  Html := MarkdownToHtml('~~texto removido~~');
-  ExpectContains('extensão GFM', Html, '<del>texto removido</del>');
-
+procedure TMarkdownRendererTests.SanitizesUnsafeHtml;
+var
+  Html: string;
+begin
   Html := MarkdownToHtml('<script>alert(1)</script>' + LineEnding +
     '[perigoso](javascript:alert(1))');
-  ExpectContains('escape de HTML', Html,
+  AssertHtmlContains('escape de HTML', Html,
     '&lt;script&gt;alert(1)&lt;/script&gt;');
+end;
 
-  WriteLn('Todos os testes do renderizador passaram.');
+initialization
+  RegisterTest(TMarkdownRendererTests);
+
 end.

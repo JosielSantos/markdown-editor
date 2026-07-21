@@ -1,31 +1,57 @@
-program TestFileService;
+unit Test_File_Service;
 
 {$mode objfpc}{$H+}
 
+interface
+
 uses
-  File_Service, SysUtils;
+  FpcUnit;
+
+type
+  TFileServiceTests = class(TTestCase)
+  private
+    TestFileName: string;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure BuildsHtmlExportFileName;
+    procedure ReadsWrittenUtf8Content;
+  end;
+
+implementation
+
+uses
+  File_Service, SysUtils, TestRegistry;
 
 const
   TestContent = '# Olá' + LineEnding + 'Texto em UTF-8: ação.';
-  TestFileName = 'bin' + DirectorySeparator + 'file-service-test.md';
 
+procedure TFileServiceTests.SetUp;
 begin
-  if HtmlExportFileName('pasta' + DirectorySeparator + 'notas.markdown') <>
-    'pasta' + DirectorySeparator + 'notas.html' then
-  begin
-    WriteLn(StdErr, 'FALHOU: nome do arquivo HTML está incorreto.');
-    Halt(1);
-  end;
+  TestFileName := GetTempFileName(GetTempDir, 'mde');
+end;
+
+procedure TFileServiceTests.TearDown;
+begin
+  if FileExists(TestFileName) then
+    DeleteFile(TestFileName);
+end;
+
+procedure TFileServiceTests.BuildsHtmlExportFileName;
+begin
+  AssertEquals('pasta' + DirectorySeparator + 'notas.html',
+    HtmlExportFileName(
+      'pasta' + DirectorySeparator + 'notas.markdown'));
+end;
+
+procedure TFileServiceTests.ReadsWrittenUtf8Content;
+begin
   WriteUtf8TextFile(TestFileName, TestContent);
-  if ReadUtf8TextFile(TestFileName) <> TestContent then
-  begin
-    WriteLn(StdErr, 'FALHOU: conteúdo salvo difere do conteúdo lido.');
-    Halt(1);
-  end;
-  if not DeleteFile(TestFileName) then
-  begin
-    WriteLn(StdErr, 'FALHOU: arquivo temporário não pôde ser removido.');
-    Halt(1);
-  end;
-  WriteLn('Todos os testes de arquivo passaram.');
+  AssertEquals(TestContent, ReadUtf8TextFile(TestFileName));
+end;
+
+initialization
+  RegisterTest(TFileServiceTests);
+
 end.

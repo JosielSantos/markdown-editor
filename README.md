@@ -19,6 +19,13 @@ Todos os comandos também estão disponíveis na barra de menus. Ao fechar,
 criar ou abrir outro documento, o editor pergunta o que fazer com alterações
 não salvas.
 
+Um documento também pode ser aberto diretamente pela linha de comando:
+
+```powershell
+.\bin\markdown-editor.exe .\a.md
+.\bin\markdown-editor.exe "C:\Meus documentos\anotacoes.md"
+```
+
 O conteúdo é processado pela biblioteca `MarkdownEngine` com as extensões
 GitHub Flavored Markdown habilitadas, incluindo tabelas, texto riscado e
 estruturas como listas aninhadas que não eram tratadas corretamente pelo

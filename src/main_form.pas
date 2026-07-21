@@ -32,6 +32,7 @@ type
     procedure UpdateWindowTitle;
   public
     constructor Create(TheOwner: TComponent); override;
+    function LoadMarkdownDocument(const FileName: string): Boolean;
   end;
 
 var
@@ -183,6 +184,24 @@ begin
   UpdateWindowTitle;
 end;
 
+function TEditorForm.LoadMarkdownDocument(const FileName: string): Boolean;
+var
+  ResolvedFileName: string;
+begin
+  Result := False;
+  ResolvedFileName := ExpandFileName(FileName);
+  try
+    EditorMemo.Text := ReadUtf8TextFile(ResolvedFileName);
+    CurrentFileName := ResolvedFileName;
+    DocumentModified := False;
+    UpdateWindowTitle;
+    Result := True;
+  except
+    on Error: Exception do
+      MessageDlg('Erro ao abrir arquivo', Error.Message, mtError, [mbOK], 0);
+  end;
+end;
+
 procedure TEditorForm.OpenMarkdown(Sender: TObject);
 var
   OpenDialog: TOpenDialog;
@@ -197,15 +216,7 @@ begin
     OpenDialog.Options := [ofFileMustExist, ofPathMustExist, ofEnableSizing];
     if not OpenDialog.Execute then
       Exit;
-    try
-      EditorMemo.Text := ReadUtf8TextFile(OpenDialog.FileName);
-      CurrentFileName := OpenDialog.FileName;
-      DocumentModified := False;
-      UpdateWindowTitle;
-    except
-      on Error: Exception do
-        MessageDlg('Erro ao abrir arquivo', Error.Message, mtError, [mbOK], 0);
-    end;
+    LoadMarkdownDocument(OpenDialog.FileName);
   finally
     OpenDialog.Free;
   end;

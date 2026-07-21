@@ -35,6 +35,15 @@ Se o arquivo informado existir, seu conteúdo será carregado. Caso contrário,
 o editor abrirá vazio e usará o caminho informado no próximo `Ctrl+S`, sem
 exibir o diálogo de salvar.
 
+Para registrar o executável como aplicativo associado a `.md` e `.markdown`
+para o usuário atual, execute:
+
+```powershell
+.\bin\markdown-editor.exe associate-files
+```
+
+O comando mostra o resultado e termina sem abrir a janela do editor.
+
 O conteúdo é processado pela biblioteca `MarkdownEngine` com as extensões
 GitHub Flavored Markdown habilitadas, incluindo tabelas, texto riscado e
 estruturas como listas aninhadas que não eram tratadas corretamente pelo

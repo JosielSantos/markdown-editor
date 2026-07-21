@@ -6,7 +6,10 @@ unit Command_Line;
 interface
 
 type
+    TCommandLineAction = (claOpenEditor, claAssociateFiles);
+
     TCommandLineArguments = record
+        Action: TCommandLineAction;
         MarkdownFileName: string;
         ErrorMessage: string;
     end;
@@ -24,6 +27,7 @@ uses
     Types;
 
 const
+    AssociateFilesCommandName = 'associate-files';
     FileArgumentName = 'file';
 
 function CopyArguments(const Arguments: array of string): TStringDynArray;
@@ -39,8 +43,8 @@ end;
 procedure ConfigureParser(var Parser: TArgParser);
 begin
     Parser.Init;
-    Parser.SetUsage('markdown-editor [opções] [arquivo.md]');
-    Parser.AddPositional(FileArgumentName, atString, 'Arquivo Markdown a abrir');
+    Parser.SetUsage('markdown-editor [opções] [associate-files | arquivo.md]');
+    Parser.AddPositional(FileArgumentName, atString, 'Comando ou arquivo Markdown a abrir');
 end;
 
 function ParseArguments(const Arguments: array of string): TCommandLineArguments;
@@ -49,6 +53,7 @@ var
     ParserArguments: TStringDynArray;
     UnparsedArguments: TStringDynArray;
 begin
+    Result.Action := claOpenEditor;
     Result.MarkdownFileName := '';
     Result.ErrorMessage := '';
     FillChar(Parser, SizeOf(Parser), 0);
@@ -62,6 +67,8 @@ begin
             Result.ErrorMessage := Parser.Error
         else if Length(UnparsedArguments) > 0 then
             Result.ErrorMessage := Format('Argumento não reconhecido: %s', [UnparsedArguments[0]])
+        else if SameText(Parser.GetString(FileArgumentName), AssociateFilesCommandName) then
+            Result.Action := claAssociateFiles
         else
             Result.MarkdownFileName := Parser.GetString(FileArgumentName);
     finally

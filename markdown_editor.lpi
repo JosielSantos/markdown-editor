@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="17">
+    <Units Count="19">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -151,6 +151,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Recent_Files_Controller"/>
       </Unit16>
+      <Unit17>
+        <Filename Value="src/session_state.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Session_State"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="src/session_controller.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Session_Controller"/>
+      </Unit18>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

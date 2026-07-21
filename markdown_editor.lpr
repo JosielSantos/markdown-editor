@@ -49,6 +49,8 @@ begin
     end;
     Application.CreateForm(TEditorForm, EditorForm);
     if CommandLineArguments.MarkdownFileName <> '' then
-        EditorForm.InitializeMarkdownDocument(CommandLineArguments.MarkdownFileName);
+        EditorForm.InitializeMarkdownDocument(CommandLineArguments.MarkdownFileName)
+    else
+        EditorForm.RestoreLastSession;
     Application.Run;
 end.

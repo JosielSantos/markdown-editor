@@ -9,6 +9,7 @@ uses
     Classes,
     Forms,
     Recent_Files_Controller,
+    Session_Controller,
     StdCtrls;
 
 type
@@ -18,6 +19,7 @@ type
         EditorMemo: TMemo;
         LastSavedContent: string;
         RecentFiles: TRecentFilesController;
+        Session: TSessionController;
         procedure CanCloseEditor(Sender: TObject; var CanClose: Boolean);
         function ChooseMarkdownSavePath: Boolean;
         procedure CreateEditor;
@@ -44,6 +46,7 @@ type
         destructor Destroy; override;
         procedure InitializeMarkdownDocument(const FileName: string);
         function LoadMarkdownDocument(const FileName: string): Boolean;
+        procedure RestoreLastSession;
     end;
 
 var
@@ -62,7 +65,6 @@ uses
     Html_Export_Service,
     LCLIntf,
     LCLType,
-    Line_Navigation,
     Menus,
     Preview_Form,
     SysUtils;
@@ -111,6 +113,7 @@ begin
     Height := 650;
     CreateMenuBar;
     CreateEditor;
+    Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);
     CurrentFileName := '';
     LastSavedContent := '';
     OnCloseQuery := @CanCloseEditor;
@@ -119,6 +122,7 @@ end;
 
 destructor TEditorForm.Destroy;
 begin
+    Session.Free;
     RecentFiles.Free;
     inherited Destroy;
 end;
@@ -126,6 +130,8 @@ end;
 procedure TEditorForm.CanCloseEditor(Sender: TObject; var CanClose: Boolean);
 begin
     CanClose := HandleUnsavedChanges;
+    if CanClose then
+        Session.Persist(CurrentFileName);
 end;
 
 function TEditorForm.ChooseMarkdownSavePath: Boolean;
@@ -190,8 +196,7 @@ var
 begin
     if not ChooseLineNumber(Self, EditorMemo.CaretPos.Y + 1, EditorMemo.Lines.Count, SelectedLine) then
         Exit;
-    EditorMemo.SelStart := MemoLineStartIndex(EditorMemo.Lines, SelectedLine);
-    EditorMemo.SetFocus;
+    Session.PositionCursorAtLine(SelectedLine);
 end;
 
 function TEditorForm.HandleUnsavedChanges: Boolean;
@@ -284,6 +289,11 @@ begin
     if not HandleUnsavedChanges then
         Exit;
     LoadMarkdownDocument(FileName);
+end;
+
+procedure TEditorForm.RestoreLastSession;
+begin
+    Session.Restore;
 end;
 
 function TEditorForm.SaveCurrentDocument: Boolean;

@@ -13,6 +13,7 @@ type
     published
         procedure AcceptsLineWithinDocument;
         procedure CalculatesMemoLineStartIndex;
+        procedure ClampsLineToDocumentBounds;
         procedure RejectsInvalidLineValues;
         procedure TreatsEmptyDocumentAsOneLine;
     end;
@@ -52,6 +53,14 @@ begin
     finally
         Lines.Free;
     end;
+end;
+
+procedure TLineNavigationTests.ClampsLineToDocumentBounds;
+begin
+    AssertEquals(1, ClampLineNumber(0, 10));
+    AssertEquals(5, ClampLineNumber(5, 10));
+    AssertEquals(10, ClampLineNumber(15, 10));
+    AssertEquals(1, ClampLineNumber(5, 0));
 end;
 
 procedure TLineNavigationTests.RejectsInvalidLineValues;

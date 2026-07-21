@@ -36,6 +36,7 @@ type
         procedure UpdateWindowTitle;
     public
         constructor Create(TheOwner: TComponent); override;
+        procedure InitializeMarkdownDocument(const FileName: string);
         function LoadMarkdownDocument(const FileName: string): Boolean;
     end;
 
@@ -191,6 +192,19 @@ begin
         Exit;
     EditorMemo.Clear;
     CurrentFileName := '';
+    DocumentModified := False;
+    UpdateWindowTitle;
+end;
+
+procedure TEditorForm.InitializeMarkdownDocument(const FileName: string);
+begin
+    if FileExists(FileName) then
+    begin
+        LoadMarkdownDocument(FileName);
+        Exit;
+    end;
+    EditorMemo.Clear;
+    CurrentFileName := ExpandFileName(FileName);
     DocumentModified := False;
     UpdateWindowTitle;
 end;

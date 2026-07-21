@@ -21,6 +21,6 @@ begin
     if CommandLineArguments.ErrorMessage <> '' then
         MessageBox(0, PChar(CommandLineArguments.ErrorMessage), PChar(Application.Title), MB_OK or MB_ICONERROR)
     else if CommandLineArguments.MarkdownFileName <> '' then
-        EditorForm.LoadMarkdownDocument(CommandLineArguments.MarkdownFileName);
+        EditorForm.InitializeMarkdownDocument(CommandLineArguments.MarkdownFileName);
     Application.Run;
 end.

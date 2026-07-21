@@ -31,6 +31,10 @@ Um documento também pode ser aberto diretamente pela linha de comando:
 .\bin\markdown-editor.exe "C:\Meus documentos\anotacoes.md"
 ```
 
+Se o arquivo informado existir, seu conteúdo será carregado. Caso contrário,
+o editor abrirá vazio e usará o caminho informado no próximo `Ctrl+S`, sem
+exibir o diálogo de salvar.
+
 O conteúdo é processado pela biblioteca `MarkdownEngine` com as extensões
 GitHub Flavored Markdown habilitadas, incluindo tabelas, texto riscado e
 estruturas como listas aninhadas que não eram tratadas corretamente pelo

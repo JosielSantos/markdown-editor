@@ -20,6 +20,19 @@
       <Item2 Name="Release">
         <CompilerOptions>
           <Version Value="11"/>
+          <Target>
+            <Filename Value="bin/markdown-editor"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="src"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <Parsing>
+            <SyntaxOptions>
+              <SyntaxMode Value="ObjFPC"/>
+            </SyntaxOptions>
+          </Parsing>
           <CodeGeneration>
             <Optimizations>
               <OptimizationLevel Value="3"/>
@@ -30,6 +43,11 @@
               <GenerateDebugInfo Value="False"/>
               <StripSymbols Value="True"/>
             </Debugging>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
           </Linking>
         </CompilerOptions>
       </Item2>

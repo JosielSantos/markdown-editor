@@ -1,145 +1,97 @@
-# Editor Markdown Acessível
+# Markdown Editor
 
-Editor e renderizador Markdown autocontido para Windows, escrito em Free
-Pascal. O MVP usa controles Win32 nativos por meio do Lazarus LCL e exibe a
-prévia em um WebView2 interno, sem abrir navegador externo ou servidor local.
+Editor simples de Markdown para Windows. Ele permite escrever em uma área de
+texto, conferir o documento renderizado sem sair do programa e exportar uma
+cópia em HTML.
 
-## Funcionalidades
+## Instalação
+
+Baixe `markdown-editor-0.1.0-setup.exe` na página de
+[releases](https://github.com/JosielSantos/markdown-editor/releases) e execute o
+arquivo. Durante a instalação, você pode associar as extensões `.md` e
+`.markdown` ao Markdown Editor e escolher se o programa deve ser iniciado ao
+final.
+
+O programa é destinado ao Windows 10 ou 11 de 64 bits e precisa do Microsoft
+Edge WebView2 Runtime. Esse componente normalmente já está presente em
+instalações atuais do Windows e do Microsoft Edge.
+
+## Como usar
+
+Digite ou cole o Markdown na janela principal. Use `F9` para abrir a
+visualização e `Esc` para voltar ao editor. A visualização é interna; somente
+links para páginas e endereços de e-mail são encaminhados ao aplicativo padrão
+do Windows.
 
 | Ação | Atalho |
 | --- | --- |
+| Novo documento | `Ctrl+N` |
 | Abrir um arquivo Markdown | `Ctrl+O` |
-| Salvar o Markdown atual | `Ctrl+S` |
-| Salvar Markdown como | `Ctrl+Shift+S` |
-| Exportar HTML junto ao Markdown atual | `F2` |
-| Exportar HTML como | `Ctrl+F2` |
-| Renderizar e abrir a visualização | `F9` |
+| Salvar | `Ctrl+S` |
+| Salvar como | `Ctrl+Shift+S` |
+| Exportar HTML ao lado do Markdown | `F2` |
+| Escolher onde exportar o HTML | `Ctrl+F2` |
+| Abrir a visualização | `F9` |
 | Fechar a visualização | `Esc` |
 
-Todos os comandos também estão disponíveis na barra de menus. Ao fechar,
-criar ou abrir outro documento, o editor pergunta o que fazer com alterações
-não salvas. Se o conteúdo voltar a ser idêntico à última versão salva, o
-documento deixa de ser marcado como alterado.
+Todos os comandos também estão disponíveis na barra de menus. O título da
+janela recebe um asterisco quando o conteúdo é alterado. Se uma edição for
+desfeita e o texto voltar a ser igual à última versão salva, o asterisco é
+removido.
 
-Com um Markdown nomeado, `F2` grava o HTML no mesmo diretório e troca a
-extensão por `.html`. Sem um arquivo atual, `F2` abre o diálogo de exportação.
-`Ctrl+F2` sempre permite escolher outro nome ou diretório.
+`F2` usa o nome do documento atual e troca sua extensão por `.html`. Em um
+documento ainda sem nome, o programa pergunta onde criar o HTML. `Ctrl+F2`
+sempre permite escolher outro nome ou diretório.
 
-Um documento também pode ser aberto diretamente pela linha de comando:
+## Markdown aceito
 
-```powershell
-.\bin\markdown-editor.exe .\a.md
-.\bin\markdown-editor.exe "C:\Meus documentos\anotacoes.md"
-```
+O editor processa GitHub Flavored Markdown, incluindo:
 
-Se o arquivo informado existir, seu conteúdo será carregado. Caso contrário,
-o editor abrirá vazio e usará o caminho informado no próximo `Ctrl+S`, sem
-exibir o diálogo de salvar.
+- títulos, parágrafos e citações;
+- listas simples, numeradas e aninhadas;
+- listas de tarefas;
+- links, tabelas e texto riscado;
+- blocos e trechos de código.
 
-Para registrar o executável como aplicativo associado a `.md` e `.markdown`
-para o usuário atual, execute:
-
-```powershell
-.\bin\markdown-editor.exe associate-files
-```
-
-O comando mostra o resultado e termina sem abrir a janela do editor.
-
-Para associar silenciosamente e iniciar o editor em seguida, use:
-
-```powershell
-.\bin\markdown-editor.exe associate-files --quiet --start
-```
-
-`--quiet` oculta somente a confirmação de sucesso; mensagens de erro continuam
-sendo exibidas. `--start` abre a janela do editor depois da associação.
-
-O conteúdo é processado pela biblioteca `MarkdownEngine` com as extensões
-GitHub Flavored Markdown habilitadas, incluindo tabelas, texto riscado e
-estruturas como listas aninhadas que não eram tratadas corretamente pelo
-parser inicial do MVP.
+HTML potencialmente inseguro não é executado na visualização.
 
 ## Acessibilidade
 
-- Editor, menus e diálogos de arquivo usam controles nativos do Windows.
-- O editor possui nome, descrição e papel de acessibilidade explícitos.
-- A visualização usa a árvore semântica HTML do Microsoft Edge WebView2 para
-  expor títulos, listas, links e caixas de seleção ao leitor de tela.
-- A visualização é um diálogo interno somente leitura; `Esc` volta ao editor.
-- Não há barras de ferramentas ou controles de formatação que aumentem a
-  quantidade de paradas de tabulação.
+A janela de edição, os menus, as mensagens e os diálogos de arquivo usam
+controles nativos do Windows. A visualização expõe a estrutura do HTML ao
+leitor de tela, incluindo títulos, listas, links e caixas de seleção. Não há
+barra de ferramentas de formatação nem controles adicionais entre o editor e
+os menus.
 
-## Dependências
+## Abrir pela linha de comando
 
-- Free Pascal 3.2.2 ou posterior
-- Lazarus 4.8 ou posterior com o widgetset Win32
-- Microsoft Edge WebView2 Runtime
-- pasfmt 0.7.0 ou posterior disponível no `PATH`
-
-As bibliotecas são rastreadas na seção `RequiredPackages` de
-`markdown_editor.lpi`, usando o gerenciador de pacotes do Lazarus:
-
-- `LCL`, para a interface nativa;
-- `WebView4Delphi`, para hospedar a visualização WebView2 interna e expor a
-  semântica HTML pelas APIs de acessibilidade do Windows;
-- `MarkdownEngine`, da biblioteca BSD `delphi-markdown`, para o parsing
-  GitHub Flavored Markdown;
-- `argparser_fp`, da biblioteca MIT `argparser-fp`, para argumentos
-  posicionais e a futura inclusão de opções e comandos.
-
-As revisões das três bibliotecas ficam fixadas como submódulos Git. O script
-de compilação copia `WebView2Loader.dll` para `bin`; o Runtime do WebView2
-precisa estar instalado no Windows (ele já acompanha versões atuais do Edge e
-do Windows 11).
-
-## Compilar e testar
-
-Clone incluindo a dependência:
+É possível informar um arquivo ao iniciar o programa:
 
 ```powershell
-git clone --recurse-submodules <url-do-repositorio>
+markdown-editor.exe "C:\Documentos\anotacoes.md"
 ```
 
-Em um clone já existente, execute `git submodule update --init`. Depois, com
-`lazbuild` no `PATH` ou `LazarusDir` definido:
+Se o arquivo ainda não existir, o editor começa vazio e usa o caminho informado
+quando você pressionar `Ctrl+S`.
+
+A associação de arquivos também pode ser feita manualmente:
 
 ```powershell
-.\scripts\format.ps1
-.\scripts\build.ps1 -Mode Release
+markdown-editor.exe associate-files
+```
+
+## Desenvolvimento
+
+O projeto usa Free Pascal, Lazarus e dependências mantidas como submódulos Git.
+Para compilar e executar os testes:
+
+```powershell
+git clone --recurse-submodules https://github.com/JosielSantos/markdown-editor.git
+cd markdown-editor
+.\scripts\build.ps1 -Mode Debug
 .\scripts\test.ps1
 ```
 
-Use `.\scripts\format.ps1 -Check` para somente verificar a formatação. As
-regras ficam versionadas em `pasfmt.toml`; o script não formata `vendor/`.
-
-O executável é criado em `bin\markdown-editor.exe`. Também é possível abrir
-`markdown_editor.lpi` no Lazarus e selecionar **Executar > Compilar**.
-
-## Criar o instalador
-
-Com o Inno Setup 6.3 ou posterior instalado e `ISCC.exe` disponível no `PATH`,
-compile primeiro em modo Release e depois gere o instalador:
-
-```powershell
-.\scripts\build.ps1 -Mode Release
-ISCC.exe .\installer\markdown-editor.iss
-```
-
-O instalador será criado em `dist\`. Ele oferece as opções de associar arquivos
-Markdown e executar o editor após a instalação.
-
-## Estrutura
-
-- `src/markdown_renderer.pas`: adaptador entre `MarkdownEngine` e a página
-  HTML autocontida;
-- `src/main_form.pas`: ciclo de vida do documento e coordenação da interface;
-- `src/preview_form.pas`: diálogo modal de visualização;
-- `src/file_service.pas`: leitura e escrita UTF-8;
-- `src/command_line.pas`: parsing dos argumentos de inicialização;
-- `installer/markdown-editor.iss`: instalador para Windows com Inno Setup;
-- `tests/`: suítes FPCUnit e runner de testes em modo console.
-
-Todos os arquivos Pascal próprios têm menos de 300 linhas e as unidades se
-mantêm focadas em uma responsabilidade. O código de terceiros permanece sem
-alterações dentro de `vendor/` e sua licença está reproduzida em
-`THIRD_PARTY_NOTICES.md`.
+As orientações para contribuir estão em [AGENTS.md](AGENTS.md). Licenças e
+avisos das bibliotecas utilizadas estão em
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

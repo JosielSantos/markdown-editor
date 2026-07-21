@@ -115,6 +115,19 @@ regras ficam versionadas em `pasfmt.toml`; o script não formata `vendor/`.
 O executável é criado em `bin\markdown-editor.exe`. Também é possível abrir
 `markdown_editor.lpi` no Lazarus e selecionar **Executar > Compilar**.
 
+## Criar o instalador
+
+Com o Inno Setup 6.3 ou posterior instalado e `ISCC.exe` disponível no `PATH`,
+compile primeiro em modo Release e depois gere o instalador:
+
+```powershell
+.\scripts\build.ps1 -Mode Release
+ISCC.exe .\installer\markdown-editor.iss
+```
+
+O instalador será criado em `dist\`. Ele oferece as opções de associar arquivos
+Markdown e executar o editor após a instalação.
+
 ## Estrutura
 
 - `src/markdown_renderer.pas`: adaptador entre `MarkdownEngine` e a página
@@ -123,6 +136,7 @@ O executável é criado em `bin\markdown-editor.exe`. Também é possível abrir
 - `src/preview_form.pas`: diálogo modal de visualização;
 - `src/file_service.pas`: leitura e escrita UTF-8;
 - `src/command_line.pas`: parsing dos argumentos de inicialização;
+- `installer/markdown-editor.iss`: instalador para Windows com Inno Setup;
 - `tests/`: suítes FPCUnit e runner de testes em modo console.
 
 Todos os arquivos Pascal próprios têm menos de 300 linhas e as unidades se

@@ -7,9 +7,10 @@ and package links live in `markdown_editor.lpi`. Production units are under
 `src/`, with one responsibility per file: `main_form.pas` coordinates the UI,
 `markdown_renderer.pas` renders GitHub Flavored Markdown, and the service units
 handle files and HTML export. FPCUnit suites and their console runner are in
-`tests/`. Build helpers are in `scripts/`. Treat `vendor/` as read-only: its
+`tests/`. Build helpers are in `scripts/`; the Inno Setup definition is under
+`installer/`. Treat `vendor/` as read-only: its
 MarkdownEngine, WebView4Delphi, and argparser-fp revisions are Git submodules. Generated files
-belong in `bin/`, `lib/`, or `.lazarus/`.
+belong in `bin/`, `dist/`, `lib/`, or `.lazarus/`.
 
 ## Build, Test, and Development Commands
 
@@ -21,6 +22,7 @@ git submodule update --init
 .\scripts\build.ps1 -Mode Release
 .\scripts\format.ps1
 .\scripts\test.ps1
+ISCC.exe .\installer\markdown-editor.iss
 ```
 
 The build script registers Lazarus packages and copies `WebView2Loader.dll` to
@@ -28,7 +30,8 @@ The build script registers Lazarus packages and copies `WebView2Loader.dll` to
 use `-Check` to verify formatting without writes. The test script builds the
 application, compiles the FPCUnit suite, and runs its console runner. Launch locally with
 `.\bin\markdown-editor.exe .\example.md`. Development requires FPC 3.2.2+,
-Lazarus 4.8+ with Win32 LCL, and the Microsoft Edge WebView2 Runtime.
+Lazarus 4.8+ with Win32 LCL, and the Microsoft Edge WebView2 Runtime. Build the
+installer only after a Release build; its output belongs in `dist/`.
 
 ## Coding Style & Naming Conventions
 

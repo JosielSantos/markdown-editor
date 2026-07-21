@@ -23,6 +23,7 @@ type
         InitializationTimer: TTimer;
         HtmlDocument: string;
         ErrorShown: Boolean;
+        PreviewNavigationPending: Boolean;
         procedure BrowserAfterCreated(Sender: TObject);
         procedure BrowserInitializationError(Sender: TObject; ErrorCode: HRESULT; const ErrorMessage: wvstring);
         procedure BrowserAcceleratorKeyPressed(
@@ -30,8 +31,19 @@ type
             const Controller: ICoreWebView2Controller;
             const Args: ICoreWebView2AcceleratorKeyPressedEventArgs
         );
+        procedure BrowserNavigationStarting(
+            Sender: TObject;
+            const WebView: ICoreWebView2;
+            const Args: ICoreWebView2NavigationStartingEventArgs
+        );
+        procedure BrowserNewWindowRequested(
+            Sender: TObject;
+            const WebView: ICoreWebView2;
+            const Args: ICoreWebView2NewWindowRequestedEventArgs
+        );
         procedure CheckWebViewInitialization(Sender: TObject);
         procedure CloseWithEscape(Sender: TObject; var Key: Word; Shift: TShiftState);
+        procedure OpenExternalLink(const Uri: string);
         procedure ShowWebViewError(const Details: string);
         procedure StartBrowser(Sender: TObject);
         procedure WMMove(var Message: TWMMove); message WM_MOVE;
@@ -47,6 +59,7 @@ uses
     Controls,
     LCLIntf,
     LCLType,
+    Link_Navigation,
     Markdown_Renderer,
     SysUtils,
     uWVCoreWebView2Args,
@@ -79,6 +92,8 @@ begin
     Browser.OnAfterCreated := @BrowserAfterCreated;
     Browser.OnInitializationError := @BrowserInitializationError;
     Browser.OnAcceleratorKeyPressed := @BrowserAcceleratorKeyPressed;
+    Browser.OnNavigationStarting := @BrowserNavigationStarting;
+    Browser.OnNewWindowRequested := @BrowserNewWindowRequested;
 
     BrowserHost := TWVWindowParent.Create(Self);
     BrowserHost.Parent := Self;
@@ -92,13 +107,65 @@ begin
     InitializationTimer.OnTimer := @CheckWebViewInitialization;
 end;
 
+procedure TPreviewForm.BrowserNavigationStarting(
+    Sender: TObject;
+    const WebView: ICoreWebView2;
+    const Args: ICoreWebView2NavigationStartingEventArgs
+);
+var
+    NavigationArgs: TCoreWebView2NavigationStartingEventArgs;
+    Uri: string;
+begin
+    NavigationArgs := TCoreWebView2NavigationStartingEventArgs.Create(Args);
+    try
+        Uri := UTF8Encode(NavigationArgs.URI);
+        case ClassifyNavigation(Uri, PreviewNavigationPending) of
+            lnaKeepInPreview: Exit;
+            lnaOpenExternally:
+            begin
+                NavigationArgs.Cancel := True;
+                OpenExternalLink(Uri);
+            end;
+            lnaBlock: NavigationArgs.Cancel := True;
+        end;
+    finally
+        PreviewNavigationPending := False;
+        NavigationArgs.Free;
+    end;
+end;
+
+procedure TPreviewForm.BrowserNewWindowRequested(
+    Sender: TObject;
+    const WebView: ICoreWebView2;
+    const Args: ICoreWebView2NewWindowRequestedEventArgs
+);
+var
+    NewWindowArgs: TCoreWebView2NewWindowRequestedEventArgs;
+    Uri: string;
+begin
+    NewWindowArgs := TCoreWebView2NewWindowRequestedEventArgs.Create(Args);
+    try
+        NewWindowArgs.Handled := True;
+        Uri := UTF8Encode(NewWindowArgs.URI);
+        case ClassifyNavigation(Uri, False) of
+            lnaKeepInPreview: Browser.Navigate(UTF8Decode(Uri));
+            lnaOpenExternally: OpenExternalLink(Uri);
+            lnaBlock: Exit;
+        end;
+    finally
+        NewWindowArgs.Free;
+    end;
+end;
+
 procedure TPreviewForm.BrowserAfterCreated(Sender: TObject);
 begin
     Browser.DefaultContextMenusEnabled := False;
     Browser.DevToolsEnabled := False;
     Browser.ScriptEnabled := False;
     BrowserHost.UpdateSize;
-    Browser.NavigateToString(UTF8Decode(HtmlDocument));
+    PreviewNavigationPending := True;
+    if not Browser.NavigateToString(UTF8Decode(HtmlDocument)) then
+        PreviewNavigationPending := False;
     BrowserHost.SetFocus;
 end;
 
@@ -145,6 +212,17 @@ begin
         ModalResult := mrCancel;
         Key := 0;
     end;
+end;
+
+procedure TPreviewForm.OpenExternalLink(const Uri: string);
+begin
+    if not LCLIntf.OpenURL(Uri) then
+        LCLIntf.MessageBox(
+            Handle,
+            'O Windows não conseguiu abrir o link no aplicativo padrão.',
+            'Não foi possível abrir o link',
+            MB_OK or MB_ICONERROR
+        );
 end;
 
 procedure TPreviewForm.ShowWebViewError(const Details: string);

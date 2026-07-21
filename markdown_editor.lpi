@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="8">
+    <Units Count="9">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -106,6 +106,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Command_Line"/>
       </Unit7>
+      <Unit8>
+        <Filename Value="src/link_navigation.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Link_Navigation"/>
+      </Unit8>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

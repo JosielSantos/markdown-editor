@@ -42,8 +42,8 @@ jobs:
           $installerName = "lazarus-$env:LAZARUS_VERSION-fpc-3.2.2-win64.exe"
           $installerPath = Join-Path $env:RUNNER_TEMP $installerName
           $installDirectory = Join-Path $env:RUNNER_TEMP "lazarus-$env:LAZARUS_VERSION"
-          $downloadUrl = 'https://sourceforge.net/projects/lazarus/files/' +
-              "Lazarus%20Windows%2064%20bits/Lazarus%20$env:LAZARUS_VERSION/$installerName/download"
+          $downloadUrl = 'https://downloads.sourceforge.net/project/lazarus/' +
+              "Lazarus%20Windows%2064%20bits/Lazarus%20$env:LAZARUS_VERSION/$installerName"
           $mirrors = @('pilotfiber', 'phoenixnap', 'flylife')
           $verifiedDownload = $false
 

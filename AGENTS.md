@@ -19,10 +19,11 @@ Initialize dependencies after cloning:
 ```powershell
 git submodule update --init
 .\scripts\build.ps1 -Mode Debug
-.\scripts\build.ps1 -Mode Release
 .\scripts\format.ps1
 .\scripts\test.ps1
-ISCC.exe .\installer\markdown-editor.iss
+.\scripts\update-version.ps1 -Version 0.3.0
+.\scripts\build.ps1 -Mode Release
+.\scripts\package-release.ps1 -Version 0.3.0
 ```
 
 The build script registers Lazarus packages and copies `WebView2Loader.dll` to
@@ -32,6 +33,8 @@ application, compiles the FPCUnit suite, and runs its console runner. Launch loc
 `.\bin\markdown-editor.exe .\example.md`. Development requires FPC 3.2.2+,
 Lazarus 4.8+ with Win32 LCL, and the Microsoft Edge WebView2 Runtime. Build the
 installer only after a Release build; its output belongs in `dist/`.
+The version script synchronizes the README and Inno Setup definition. The
+package script creates both installer and portable ZIP release artifacts.
 
 ## Coding Style & Naming Conventions
 

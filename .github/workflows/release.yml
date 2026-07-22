@@ -1,0 +1,154 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-2025
+    env:
+      LAZARUS_VERSION: '4.8'
+      # https://www.lazarus-ide.org/index.php?page=checksums
+      LAZARUS_SHA256: ED25EE171D55E23CF14E0633159FDD2325EFBA56E186F8AB817AD3BF97D267D7
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Read release version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_NAME -notmatch '^\d+\.\d+\.\d+$') {
+              throw "Tag inválida: $env:GITHUB_REF_NAME"
+          }
+          "RELEASE_VERSION=$env:GITHUB_REF_NAME" >> $env:GITHUB_ENV
+
+      - name: Install Lazarus and FPC
+        shell: pwsh
+        run: |
+          $installerName = "lazarus-$env:LAZARUS_VERSION-fpc-3.2.2-win64.exe"
+          $installerPath = Join-Path $env:RUNNER_TEMP $installerName
+          $installDirectory = Join-Path $env:RUNNER_TEMP "lazarus-$env:LAZARUS_VERSION"
+          $downloadUrl = 'https://downloads.sourceforge.net/project/lazarus/' +
+              "Lazarus%20Windows%2064%20bits/Lazarus%20$env:LAZARUS_VERSION/$installerName"
+          $mirrors = @('pilotfiber', 'phoenixnap', 'flylife')
+          $verifiedDownload = $false
+
+          foreach ($mirror in $mirrors) {
+              $mirrorUrl = $downloadUrl + '?use_mirror=' + $mirror
+              Remove-Item $installerPath -Force -ErrorAction SilentlyContinue
+              & curl.exe `
+                  --fail `
+                  --location `
+                  --silent `
+                  --show-error `
+                  --connect-timeout 30 `
+                  --max-time 600 `
+                  --retry 2 `
+                  --retry-all-errors `
+                  --retry-delay 2 `
+                  --output $installerPath `
+                  $mirrorUrl
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Warning "Falha no download pelo mirror $mirror."
+                  continue
+              }
+
+              $hash = (Get-FileHash $installerPath -Algorithm SHA256).Hash
+              if ($hash -ne $env:LAZARUS_SHA256) {
+                  Write-Warning "SHA-256 divergente no mirror $mirror."
+                  continue
+              }
+
+              $signature = Get-AuthenticodeSignature $installerPath
+              if ($signature.Status -ne 'Valid' -or
+                  $signature.SignerCertificate.Subject -notlike '*Programming Free Pascal*') {
+                  Write-Warning "Assinatura inválida no mirror $mirror`: $($signature.Status)."
+                  continue
+              }
+
+              Write-Host "Instalador Lazarus validado pelo mirror $mirror."
+              $verifiedDownload = $true
+              break
+          }
+
+          if (-not $verifiedDownload) {
+              throw 'Nenhum mirror forneceu um instalador Lazarus válido.'
+          }
+
+          $installProcess = Start-Process -FilePath $installerPath -Wait -PassThru -ArgumentList @(
+              '/VERYSILENT',
+              '/SUPPRESSMSGBOXES',
+              '/NORESTART',
+              '/SP-',
+              "/DIR=$installDirectory"
+          )
+          if ($installProcess.ExitCode -ne 0) {
+              throw "Falha ao instalar Lazarus: $($installProcess.ExitCode)"
+          }
+          if (-not (Test-Path (Join-Path $installDirectory 'lazbuild.exe'))) {
+              throw 'lazbuild.exe não foi instalado.'
+          }
+          "LazarusDir=$installDirectory" >> $env:GITHUB_ENV
+
+      - name: Set release version
+        shell: pwsh
+        run: .\scripts\update-version.ps1 -Version $env:RELEASE_VERSION
+
+      - name: Run tests
+        shell: pwsh
+        run: .\scripts\test.ps1
+
+      - name: Build release
+        shell: pwsh
+        run: .\scripts\build.ps1 -Mode Release
+
+      - name: Create release packages
+        shell: pwsh
+        run: .\scripts\package-release.ps1 -Version $env:RELEASE_VERSION
+
+      - name: Persist release version
+        shell: pwsh
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git fetch origin $env:DEFAULT_BRANCH
+          git switch --force-create release-version "origin/$env:DEFAULT_BRANCH"
+          .\scripts\update-version.ps1 -Version $env:RELEASE_VERSION
+
+          $versionChanges = @(git status --porcelain -- README.md installer/markdown-editor.iss)
+          if ($versionChanges.Count -eq 0) {
+              Write-Host 'A versão já estava atualizada na branch padrão.'
+              return
+          }
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md installer/markdown-editor.iss
+          git commit -m "docs: update release version to $env:RELEASE_VERSION"
+          git push origin "HEAD:$env:DEFAULT_BRANCH"
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:RELEASE_VERSION `
+              ".\dist\markdown-editor-$env:RELEASE_VERSION-setup.exe" `
+              ".\dist\markdown-editor-$env:RELEASE_VERSION-portable.zip" `
+              --verify-tag `
+              --generate-notes `
+              --latest `
+              --title "Markdown Editor $env:RELEASE_VERSION"

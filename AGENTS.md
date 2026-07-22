@@ -43,7 +43,11 @@ pasfmt enforces LF, UTF-8, 120-column lines, spaces instead of tabs, four-space
 indentation, four-space continuations, and `begin` on its own line. Prefer DRY,
 KISS implementations and native LCL/Windows behavior. Never use `MessageDlg`;
 use `LCLIntf.MessageBox` for messages and confirmations so native accessible
-button labels are preserved. Always run `.\scripts\format.ps1` before every
+button labels are preserved. When creating edit controls, including `TEdit`,
+`TMemo`, and their descendants, set their accessible names with
+`Gui_Helpers.SetControlAccessibleName`; do not rely on the LCL
+`AccessibleName` property alone because the Win32 widgetset does not expose it
+reliably to screen readers. Always run `.\scripts\format.ps1` before every
 commit, followed by `git diff --check`.
 
 ## Testing Guidelines

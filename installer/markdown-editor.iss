@@ -37,6 +37,7 @@ Name: "startapplication"; Description: "Executar aplicação após instalar"; Gr
 Source: "..\bin\{#AppExecutable}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\bin\WebView2Loader.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExecutable}"; WorkingDir: "{app}"

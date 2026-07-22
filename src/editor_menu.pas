@@ -19,6 +19,7 @@ type
         ExportHtmlAs: TNotifyEvent;
         ExitEditor: TNotifyEvent;
         GoToLine: TNotifyEvent;
+        InsertLink: TNotifyEvent;
         ShowPreview: TNotifyEvent;
     end;
 
@@ -59,6 +60,7 @@ function BuildEditorMenu(
 var
     EditMenu: TMenuItem;
     FileMenu: TMenuItem;
+    InsertMenu: TMenuItem;
     ViewMenu: TMenuItem;
 begin
     Result := TMainMenu.Create(Owner);
@@ -77,6 +79,9 @@ begin
 
     EditMenu := AddTopLevelMenu(Result, '&Editar');
     AddMenuItem(EditMenu, '&Ir para a linha...', ShortCut(Ord('G'), [ssCtrl]), Actions.GoToLine);
+
+    InsertMenu := AddTopLevelMenu(Result, '&Inserir');
+    AddMenuItem(InsertMenu, '&Link...', ShortCut(Ord('L'), [ssAlt, ssShift]), Actions.InsertLink);
 
     ViewMenu := AddTopLevelMenu(Result, '&Visualizar');
     AddMenuItem(ViewMenu, '&Renderizar Markdown', ShortCut(VK_F9, []), Actions.ShowPreview);

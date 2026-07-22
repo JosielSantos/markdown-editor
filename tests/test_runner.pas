@@ -12,6 +12,7 @@ uses
     Test_File_Service,
     Test_Link_Navigation,
     Test_Line_Navigation,
+    Test_Markdown_Link,
     Test_Markdown_Renderer,
     Test_Recent_Files,
     Test_Session_State;

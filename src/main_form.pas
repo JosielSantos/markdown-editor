@@ -31,6 +31,7 @@ type
         procedure ExportHtmlToFile(const HtmlFileName: string);
         procedure GoToLine(Sender: TObject);
         function HandleUnsavedChanges: Boolean;
+        procedure InsertLink(Sender: TObject);
         procedure MarkDocumentSaved;
         procedure NewDocument(Sender: TObject);
         procedure OpenMarkdown(Sender: TObject);
@@ -66,6 +67,8 @@ uses
     Html_Export_Service,
     LCLIntf,
     LCLType,
+    Link_Dialog,
+    Markdown_Link,
     Menus,
     Preview_Form,
     SysUtils;
@@ -100,6 +103,7 @@ begin
     Actions.ExportHtmlAs := @ExportHtmlAs;
     Actions.ExitEditor := @ExitEditor;
     Actions.GoToLine := @GoToLine;
+    Actions.InsertLink := @InsertLink;
     Actions.ShowPreview := @ShowPreview;
     Menu := BuildEditorMenu(Self, Actions, RecentFilesMenu);
     RecentFiles := TRecentFilesController.Create(Self, RecentFilesMenu, @OpenRecentMarkdown, DefaultSettingsFileName);
@@ -219,6 +223,17 @@ begin
     else
         Result := False;
     end;
+end;
+
+procedure TEditorForm.InsertLink(Sender: TObject);
+var
+    LinkAddress: string;
+    LinkTitle: string;
+begin
+    if not ChooseMarkdownLink(Self, EditorMemo.SelText, LinkTitle, LinkAddress) then
+        Exit;
+    EditorMemo.SelText := BuildMarkdownLink(LinkTitle, LinkAddress);
+    EditorMemo.SetFocus;
 end;
 
 procedure TEditorForm.NewDocument(Sender: TObject);

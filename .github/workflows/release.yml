@@ -52,10 +52,27 @@ jobs:
               Write-Host "::group::Download do Lazarus pelo mirror $mirror"
               try {
                   Remove-Item $installerPath -Force -ErrorAction SilentlyContinue
-                  $response = Invoke-WebRequest -Uri $mirrorUrl -OutFile $installerPath -PassThru
+                  $curlOutput = & curl.exe `
+                      --fail `
+                      --location `
+                      --silent `
+                      --show-error `
+                      --connect-timeout 30 `
+                      --max-time 600 `
+                      --retry 2 `
+                      --retry-all-errors `
+                      --retry-delay 2 `
+                      --output $installerPath `
+                      --write-out '%{url_effective}' `
+                      $mirrorUrl
+                  $curlExitCode = $LASTEXITCODE
+                  if ($curlExitCode -ne 0) {
+                      throw "curl.exe terminou com o código $curlExitCode."
+                  }
+
                   $installer = Get-Item $installerPath
                   $hash = (Get-FileHash $installerPath -Algorithm SHA256).Hash
-                  $finalUrl = $response.BaseResponse.RequestMessage.RequestUri.AbsoluteUri
+                  $finalUrl = $curlOutput -join ''
 
                   Write-Host "Mirror solicitado: $mirror"
                   Write-Host "URL final: $finalUrl"

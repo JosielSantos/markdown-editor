@@ -25,7 +25,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="src"/>
+            <OtherUnitFiles Value="src;src/app;src/core;src/gui;src/gui/controllers;src/gui/dialogs;src/services;src/services/markdown;src/services/settings"/>
             <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Parsing>
@@ -66,121 +66,126 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="23">
+    <Units Count="24">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="src/main_form.pas"/>
+        <Filename Value="src/gui/main_form.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Main_Form"/>
       </Unit1>
       <Unit2>
-        <Filename Value="src/markdown_renderer.pas"/>
+        <Filename Value="src/services/markdown/renderer.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Markdown_Renderer"/>
+        <UnitName Value="Renderer"/>
       </Unit2>
       <Unit3>
-        <Filename Value="src/preview_form.pas"/>
+        <Filename Value="src/gui/preview_form.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Preview_Form"/>
       </Unit3>
       <Unit4>
-        <Filename Value="src/file_service.pas"/>
+        <Filename Value="src/services/files.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="File_Service"/>
+        <UnitName Value="Files"/>
       </Unit4>
       <Unit5>
-        <Filename Value="src/editor_menu.pas"/>
+        <Filename Value="src/gui/editor_menu.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Editor_Menu"/>
       </Unit5>
       <Unit6>
-        <Filename Value="src/html_export_service.pas"/>
+        <Filename Value="src/services/html_export.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Html_Export_Service"/>
+        <UnitName Value="Html_Export"/>
       </Unit6>
       <Unit7>
-        <Filename Value="src/command_line.pas"/>
+        <Filename Value="src/app/command_line.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Command_Line"/>
       </Unit7>
       <Unit8>
-        <Filename Value="src/link_navigation.pas"/>
+        <Filename Value="src/services/markdown/link_navigation.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Link_Navigation"/>
       </Unit8>
       <Unit9>
-        <Filename Value="src/heading_anchor_service.pas"/>
+        <Filename Value="src/services/markdown/heading_anchors.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Heading_Anchor_Service"/>
+        <UnitName Value="Heading_Anchors"/>
       </Unit9>
       <Unit10>
-        <Filename Value="src/file_association_service.pas"/>
+        <Filename Value="src/services/file_association.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="File_Association_Service"/>
+        <UnitName Value="File_Association"/>
       </Unit10>
       <Unit11>
-        <Filename Value="src/document_state.pas"/>
+        <Filename Value="src/core/document_state.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Document_State"/>
       </Unit11>
       <Unit12>
-        <Filename Value="src/line_navigation.pas"/>
+        <Filename Value="src/core/line_navigation.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Line_Navigation"/>
       </Unit12>
       <Unit13>
-        <Filename Value="src/go_to_line_dialog.pas"/>
+        <Filename Value="src/gui/dialogs/go_to_line.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Go_To_Line_Dialog"/>
+        <UnitName Value="Go_To_Line"/>
       </Unit13>
       <Unit14>
-        <Filename Value="src/recent_files.pas"/>
+        <Filename Value="src/services/settings/recent_files.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Recent_Files"/>
       </Unit14>
       <Unit15>
-        <Filename Value="src/editor_settings.pas"/>
+        <Filename Value="src/services/settings/editor.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Editor_Settings"/>
+        <UnitName Value="Editor"/>
       </Unit15>
       <Unit16>
-        <Filename Value="src/recent_files_controller.pas"/>
+        <Filename Value="src/gui/controllers/recent_files_controller.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Recent_Files_Controller"/>
       </Unit16>
       <Unit17>
-        <Filename Value="src/session_state.pas"/>
+        <Filename Value="src/services/settings/session.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Session_State"/>
+        <UnitName Value="Session"/>
       </Unit17>
       <Unit18>
-        <Filename Value="src/session_controller.pas"/>
+        <Filename Value="src/gui/controllers/session_controller.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Session_Controller"/>
       </Unit18>
       <Unit19>
-        <Filename Value="src/file_position_history.pas"/>
+        <Filename Value="src/services/settings/file_position_history.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="File_Position_History"/>
       </Unit19>
       <Unit20>
-        <Filename Value="src/gui_helpers.pas"/>
+        <Filename Value="src/gui/accessibility.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Gui_Helpers"/>
+        <UnitName Value="Accessibility"/>
       </Unit20>
       <Unit21>
-        <Filename Value="src/link_dialog.pas"/>
+        <Filename Value="src/gui/dialogs/insert_link.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Link_Dialog"/>
+        <UnitName Value="Insert_Link"/>
       </Unit21>
       <Unit22>
-        <Filename Value="src/markdown_link.pas"/>
+        <Filename Value="src/services/markdown/link.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Markdown_Link"/>
+        <UnitName Value="Link"/>
       </Unit22>
+      <Unit23>
+        <Filename Value="src/gui/dialogs/html_export_dialog.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Html_Export_Dialog"/>
+      </Unit23>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -190,7 +195,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="src"/>
+      <OtherUnitFiles Value="src;src/app;src/core;src/gui;src/gui/controllers;src/gui/dialogs;src/services;src/services/markdown;src/services/settings"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

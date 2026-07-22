@@ -58,19 +58,20 @@ implementation
 uses
     Controls,
     Dialogs,
+    Accessibility,
     Document_State,
     Editor_Menu,
-    Editor_Settings,
-    File_Service,
-    Go_To_Line_Dialog,
-    Gui_Helpers,
-    Html_Export_Service,
+    Files,
+    Go_To_Line,
+    Html_Export,
+    Html_Export_Dialog,
+    Insert_Link,
     LCLIntf,
     LCLType,
-    Link_Dialog,
-    Markdown_Link,
+    Link,
     Menus,
     Preview_Form,
+    Editor,
     SysUtils;
 
 procedure TEditorForm.CreateEditor;

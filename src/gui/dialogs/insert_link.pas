@@ -1,4 +1,4 @@
-unit Link_Dialog;
+unit Insert_Link;
 
 {$MODE objfpc}
 {$H+}
@@ -15,7 +15,7 @@ implementation
 uses
     Controls,
     Forms,
-    Gui_Helpers,
+    Accessibility,
     LCLIntf,
     LCLType,
     StdCtrls,

@@ -1,4 +1,4 @@
-unit Gui_Helpers;
+unit Accessibility;
 
 {$MODE objfpc}
 {$H+}

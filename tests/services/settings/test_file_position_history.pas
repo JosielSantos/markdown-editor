@@ -20,7 +20,7 @@ implementation
 
 uses
     File_Position_History,
-    Session_State,
+    Session,
     SysUtils,
     TestRegistry;
 

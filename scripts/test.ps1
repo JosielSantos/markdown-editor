@@ -6,6 +6,16 @@ $lazarusDirectory = Split-Path $lazbuild -Parent
 $fpc = Resolve-Fpc $lazarusDirectory
 $unitOutput = Join-Path $projectRoot 'lib\tests'
 $binaryOutput = Join-Path $projectRoot 'bin'
+$sourceRoot = Join-Path $projectRoot 'src'
+$testRoot = Join-Path $projectRoot 'tests'
+$sourceUnitArguments = @("-Fu$sourceRoot") + @(
+    Get-ChildItem $sourceRoot -Directory -Recurse |
+        ForEach-Object { "-Fu$($_.FullName)" }
+)
+$testUnitArguments = @("-Fu$testRoot") + @(
+    Get-ChildItem $testRoot -Directory -Recurse |
+        ForEach-Object { "-Fu$($_.FullName)" }
+)
 
 & (Join-Path $PSScriptRoot 'build.ps1') -Mode Debug
 if ($LASTEXITCODE -ne 0) {
@@ -30,8 +40,8 @@ $argumentParserUnits = $argumentParserUnit.DirectoryName
 
 New-Item -ItemType Directory -Force $unitOutput, $binaryOutput | Out-Null
 $testRunnerSource = Join-Path $projectRoot 'tests\test_runner.pas'
-& $fpc '-Mobjfpc' '-Sh' "-Fu$projectRoot\src" `
-    "-Fu$projectRoot\tests" "-Fu$markdownUnits" "-Fu$argumentParserUnits" `
+& $fpc '-Mobjfpc' '-Sh' $sourceUnitArguments `
+    $testUnitArguments "-Fu$markdownUnits" "-Fu$argumentParserUnits" `
     "-FU$unitOutput" "-FE$binaryOutput" $testRunnerSource
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE

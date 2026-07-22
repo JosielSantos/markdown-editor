@@ -1,4 +1,4 @@
-unit Test_Markdown_Link;
+unit Test_Link;
 
 {$MODE objfpc}
 {$H+}
@@ -18,7 +18,7 @@ type
 implementation
 
 uses
-    Markdown_Link,
+    Link,
     TestRegistry;
 
 procedure TMarkdownLinkTests.BuildsMarkdownLink;

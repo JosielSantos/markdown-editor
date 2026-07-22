@@ -1,4 +1,4 @@
-unit Test_File_Association_Service;
+unit Test_File_Association;
 
 {$MODE objfpc}
 {$H+}
@@ -18,7 +18,7 @@ type
 implementation
 
 uses
-    File_Association_Service,
+    File_Association,
     TestRegistry;
 
 procedure TFileAssociationServiceTests.BuildsQuotedRegistryCommands;

@@ -1,4 +1,4 @@
-unit Heading_Anchor_Service;
+unit Heading_Anchors;
 
 {$MODE objfpc}
 {$H+}

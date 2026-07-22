@@ -1,4 +1,4 @@
-unit Test_Session_State;
+unit Test_Session;
 
 {$MODE objfpc}
 {$H+}
@@ -18,7 +18,7 @@ type
 implementation
 
 uses
-    Session_State,
+    Session,
     SysUtils,
     TestRegistry;
 

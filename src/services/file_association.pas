@@ -1,4 +1,4 @@
-unit File_Association_Service;
+unit File_Association;
 
 {$MODE objfpc}
 {$H+}

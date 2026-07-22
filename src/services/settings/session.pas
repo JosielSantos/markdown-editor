@@ -1,4 +1,4 @@
-unit Session_State;
+unit Session;
 
 {$MODE objfpc}
 {$H+}

@@ -1,4 +1,4 @@
-unit Go_To_Line_Dialog;
+unit Go_To_Line;
 
 {$MODE objfpc}
 {$H+}
@@ -21,7 +21,7 @@ implementation
 
 uses
     Controls,
-    Gui_Helpers,
+    Accessibility,
     LCLIntf,
     LCLType,
     Line_Navigation,

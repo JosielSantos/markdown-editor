@@ -1,4 +1,4 @@
-unit Test_File_Service;
+unit Test_Files;
 
 {$MODE objfpc}
 {$H+}
@@ -16,14 +16,13 @@ type
         procedure SetUp; override;
         procedure TearDown; override;
     published
-        procedure BuildsHtmlExportFileName;
         procedure ReadsWrittenUtf8Content;
     end;
 
 implementation
 
 uses
-    File_Service,
+    Files,
     SysUtils,
     TestRegistry;
 
@@ -39,14 +38,6 @@ procedure TFileServiceTests.TearDown;
 begin
     if FileExists(TestFileName) then
         DeleteFile(TestFileName);
-end;
-
-procedure TFileServiceTests.BuildsHtmlExportFileName;
-begin
-    AssertEquals(
-        'pasta' + DirectorySeparator + 'notas.html',
-        HtmlExportFileName('pasta' + DirectorySeparator + 'notas.markdown')
-    );
 end;
 
 procedure TFileServiceTests.ReadsWrittenUtf8Content;

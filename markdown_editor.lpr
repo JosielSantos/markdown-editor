@@ -4,13 +4,13 @@ program MarkdownEditor;
 {$H+}
 
 uses
-    Command_Line in 'src/command_line.pas',
-    File_Association_Service in 'src/file_association_service.pas',
+    Command_Line,
+    File_Association,
     Interfaces,
     Forms,
     LCLIntf,
     LCLType,
-    Main_Form in 'src/main_form.pas',
+    Main_Form,
     SysUtils;
 
 var

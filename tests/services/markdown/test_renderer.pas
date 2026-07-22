@@ -1,4 +1,4 @@
-unit Test_Markdown_Renderer;
+unit Test_Renderer;
 
 {$MODE objfpc}
 {$H+}
@@ -24,7 +24,7 @@ type
 implementation
 
 uses
-    Markdown_Renderer,
+    Renderer,
     StrUtils,
     SysUtils,
     TestRegistry;

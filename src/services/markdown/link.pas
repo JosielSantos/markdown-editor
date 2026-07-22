@@ -1,4 +1,4 @@
-unit Markdown_Link;
+unit Link;
 
 {$MODE objfpc}
 {$H+}

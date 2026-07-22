@@ -1,4 +1,4 @@
-unit Markdown_Renderer;
+unit Renderer;
 
 {$MODE objfpc}
 {$H+}
@@ -10,7 +10,7 @@ function MarkdownToHtml(const Markdown: string): string;
 implementation
 
 uses
-    Heading_Anchor_Service,
+    Heading_Anchors,
     MarkdownCommonMark,
     SysUtils;
 

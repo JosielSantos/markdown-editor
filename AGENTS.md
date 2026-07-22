@@ -3,11 +3,14 @@
 ## Project Structure & Module Organization
 
 The application entry point is `markdown_editor.lpr`; Lazarus project settings
-and package links live in `markdown_editor.lpi`. Production units are under
-`src/`, with one responsibility per file: `main_form.pas` coordinates the UI,
-`markdown_renderer.pas` renders GitHub Flavored Markdown, and the service units
-handle files and HTML export. FPCUnit suites and their console runner are in
-`tests/`. Build helpers are in `scripts/`; the Inno Setup definition is under
+and package links live in `markdown_editor.lpi`. Production units are grouped
+by responsibility under `src/`: `app/` handles startup concerns, `core/` holds
+UI-independent editor rules, `gui/` contains forms, controllers, and dialogs,
+and `services/` contains file, settings, and Markdown operations. Keep unit
+files in the directory that matches their responsibility, such as
+`gui/dialogs/insert_link.pas` and `services/markdown/renderer.pas`. FPCUnit
+suites mirror the production structure under `tests/`, while their console
+runner remains at `tests/test_runner.pas`. Build helpers are in `scripts/`; the Inno Setup definition is under
 `installer/`. Treat `vendor/` as read-only: its
 MarkdownEngine, WebView4Delphi, and argparser-fp revisions are Git submodules. Generated files
 belong in `bin/`, `dist/`, `lib/`, or `.lazarus/`.
@@ -40,15 +43,19 @@ package script creates both installer and portable ZIP release artifacts.
 
 Use Object Pascal mode, clear names, and small routines with one purpose. Keep
 project-owned Pascal files below 300 functional lines; do not count blank lines
-or structural-only lines such as `begin` and `end`. File names use
-`snake_case.pas`; units and types use `Main_Form` and `TEditorForm` style.
+or structural-only lines such as `begin` and `end`. Unit filenames use
+`snake_case`, match their local unit name, and remain unique across `src/` so
+FPC can resolve them through the configured unit search paths. Directories
+express the architectural grouping; avoid repeating directory names in
+filenames unless needed to keep unit names unique, and do not use dotted unit
+namespaces. Types use `TEditorForm` style.
 pasfmt enforces LF, UTF-8, 120-column lines, spaces instead of tabs, four-space
 indentation, four-space continuations, and `begin` on its own line. Prefer DRY,
 KISS implementations and native LCL/Windows behavior. Never use `MessageDlg`;
 use `LCLIntf.MessageBox` for messages and confirmations so native accessible
 button labels are preserved. When creating edit controls, including `TEdit`,
 `TMemo`, and their descendants, set their accessible names with
-`Gui_Helpers.SetControlAccessibleName`; do not rely on the LCL
+`Accessibility.SetControlAccessibleName`; do not rely on the LCL
 `AccessibleName` property alone because the Win32 widgetset does not expose it
 reliably to screen readers. Apply the native accessible name only after the
 control has its final Win32 handle. For dialog controls, call the helper in an

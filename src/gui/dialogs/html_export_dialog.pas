@@ -1,4 +1,4 @@
-unit Html_Export_Service;
+unit Html_Export_Dialog;
 
 {$MODE objfpc}
 {$H+}
@@ -9,14 +9,12 @@ uses
     Classes;
 
 function ChooseHtmlExportFile(Owner: TComponent; const MarkdownFileName: string; out HtmlFileName: string): Boolean;
-procedure ExportMarkdownToHtmlFile(const Markdown, HtmlFileName: string);
 
 implementation
 
 uses
     Dialogs,
-    File_Service,
-    Markdown_Renderer;
+    Html_Export;
 
 function ChooseHtmlExportFile(Owner: TComponent; const MarkdownFileName: string; out HtmlFileName: string): Boolean;
 var
@@ -38,11 +36,6 @@ begin
     finally
         ExportDialog.Free;
     end;
-end;
-
-procedure ExportMarkdownToHtmlFile(const Markdown, HtmlFileName: string);
-begin
-    WriteUtf8TextFile(HtmlFileName, MarkdownToHtml(Markdown));
 end;
 
 end.

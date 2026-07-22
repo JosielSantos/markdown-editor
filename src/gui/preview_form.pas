@@ -65,7 +65,7 @@ uses
     LCLIntf,
     LCLType,
     Link_Navigation,
-    Markdown_Renderer,
+    Renderer,
     SysUtils,
     uWVCoreWebView2Args,
     uWVCoreWebView2WebResourceRequest,

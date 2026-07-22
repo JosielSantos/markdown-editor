@@ -1,4 +1,4 @@
-unit Editor_Settings;
+unit Editor;
 
 {$MODE objfpc}
 {$H+}

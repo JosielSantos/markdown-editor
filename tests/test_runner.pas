@@ -7,15 +7,16 @@ uses
     SimpleTestRunner,
     Test_Command_Line,
     Test_Document_State,
-    Test_File_Association_Service,
+    Test_File_Association,
     Test_File_Position_History,
-    Test_File_Service,
+    Test_Files,
+    Test_Html_Export,
     Test_Link_Navigation,
     Test_Line_Navigation,
-    Test_Markdown_Link,
-    Test_Markdown_Renderer,
+    Test_Link,
+    Test_Renderer,
     Test_Recent_Files,
-    Test_Session_State;
+    Test_Session;
 
 var
     Runner: TTestRunner;

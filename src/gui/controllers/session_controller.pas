@@ -40,7 +40,7 @@ uses
     LCLIntf,
     LCLType,
     Line_Navigation,
-    Session_State,
+    Session,
     SysUtils;
 
 procedure TSessionController.ShowError(const DialogTitle, ErrorMessage: string);

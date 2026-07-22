@@ -62,6 +62,7 @@ uses
     Editor_Settings,
     File_Service,
     Go_To_Line_Dialog,
+    Gui_Helpers,
     Html_Export_Service,
     LCLIntf,
     LCLType,
@@ -79,9 +80,9 @@ begin
     EditorMemo.WantTabs := True;
     EditorMemo.Font.Name := 'Consolas';
     EditorMemo.Font.Size := 11;
-    EditorMemo.AccessibleName := 'Editor de texto Markdown';
     EditorMemo.AccessibleDescription := 'Digite Markdown. Pressione F9 para abrir a visualização.';
     EditorMemo.AccessibleRole := larTextEditorMultiline;
+    SetControlAccessibleName(EditorMemo, 'Editor de texto Markdown');
     EditorMemo.OnChange := @EditorChanged;
     ActiveControl := EditorMemo;
 end;

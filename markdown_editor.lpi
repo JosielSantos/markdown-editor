@@ -25,7 +25,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="src;src/app;src/core;src/gui;src/gui/controllers;src/gui/dialogs;src/gui/dialogs/options;src/services;src/services/markdown;src/services/settings"/>
+            <OtherUnitFiles Value="src;src/app;src/core;src/gui;src/gui/controllers;src/gui/dialogs;src/gui/dialogs/options;src/services;src/services/language_server;src/services/markdown;src/services/settings"/>
             <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Parsing>
@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="27">
+    <Units Count="31">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -201,6 +201,26 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="General_Tab"/>
       </Unit26>
+      <Unit27>
+        <Filename Value="src/services/language_server/lsp_protocol.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Lsp_Protocol"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="src/services/language_server/lsp_diagnostics.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Lsp_Diagnostics"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="src/services/language_server/lsp_client_thread.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Lsp_Client_Thread"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="src/gui/controllers/language_server_controller.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Language_Server_Controller"/>
+      </Unit30>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -210,7 +230,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="src;src/app;src/core;src/gui;src/gui/controllers;src/gui/dialogs;src/gui/dialogs/options;src/services;src/services/markdown;src/services/settings"/>
+      <OtherUnitFiles Value="src;src/app;src/core;src/gui;src/gui/controllers;src/gui/dialogs;src/gui/dialogs/options;src/services;src/services/language_server;src/services/markdown;src/services/settings"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

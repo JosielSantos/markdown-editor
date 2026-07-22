@@ -78,7 +78,6 @@ begin
     LineEdit.Top := 40;
     LineEdit.Width := 320;
     LineEdit.Text := IntToStr(CurrentLine);
-    SetControlAccessibleName(LineEdit, 'Número da linha');
     LineEdit.AccessibleDescription := Format('Informe um número entre 1 e %d.', [AvailableLineCount]);
     LineLabel.FocusControl := LineEdit;
 
@@ -106,6 +105,7 @@ end;
 procedure TGoToLineForm.DoShow;
 begin
     inherited DoShow;
+    SetControlAccessibleName(LineEdit, 'Número da linha');
     LineEdit.SetFocus;
     LineEdit.SelectAll;
 end;

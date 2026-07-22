@@ -50,8 +50,12 @@ button labels are preserved. When creating edit controls, including `TEdit`,
 `TMemo`, and their descendants, set their accessible names with
 `Gui_Helpers.SetControlAccessibleName`; do not rely on the LCL
 `AccessibleName` property alone because the Win32 widgetset does not expose it
-reliably to screen readers. Always run `.\scripts\format.ps1` before every
-commit, followed by `git diff --check`.
+reliably to screen readers. Apply the native accessible name only after the
+control has its final Win32 handle. For dialog controls, call the helper in an
+overridden `DoShow`, immediately after `inherited DoShow` and before setting
+focus; do not call it from `CreateControls`, because the LCL may replace the
+`HWND` while showing the dialog and lose the annotation. Always run
+`.\scripts\format.ps1` before every commit, followed by `git diff --check`.
 
 ## Testing Guidelines
 

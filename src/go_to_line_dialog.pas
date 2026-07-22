@@ -21,6 +21,7 @@ implementation
 
 uses
     Controls,
+    Gui_Helpers,
     LCLIntf,
     LCLType,
     Line_Navigation,
@@ -77,7 +78,7 @@ begin
     LineEdit.Top := 40;
     LineEdit.Width := 320;
     LineEdit.Text := IntToStr(CurrentLine);
-    LineEdit.AccessibleName := 'Número da linha';
+    SetControlAccessibleName(LineEdit, 'Número da linha');
     LineEdit.AccessibleDescription := Format('Informe um número entre 1 e %d.', [AvailableLineCount]);
     LineLabel.FocusControl := LineEdit;
 

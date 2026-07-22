@@ -37,7 +37,7 @@ $readme = Join-Path $ProjectRoot 'README.md'
 
 Update-VersionReference `
     -Path $installerScript `
-    -Pattern '(?m)^#define AppVersion "\d+\.\d+\.\d+"$' `
+    -Pattern '(?m)^#define AppVersion "\d+\.\d+\.\d+"(?=\r?$)' `
     -Replacement "#define AppVersion `"$Version`""
 Update-VersionReference `
     -Path $readme `

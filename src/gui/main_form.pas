@@ -130,7 +130,7 @@ begin
     EditorPreferences := LoadEditorPreferences(DefaultSettingsFileName, DefaultLanguageServerExecutableFileName);
     CreateMenuBar;
     CreateEditor;
-    LanguageServer := TLanguageServerController.Create(Self, @NavigateToDiagnostic);
+    LanguageServer := TLanguageServerController.Create(Self, EditorMemo, @NavigateToDiagnostic);
     if EditorPreferences.UseMarkdownChecker then
         LanguageServer.Start(EditorPreferences.MarkdownCheckerExecutableFileName);
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);

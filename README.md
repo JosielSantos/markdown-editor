@@ -6,13 +6,13 @@ cópia em HTML.
 
 ## Instalação
 
-Baixe `markdown-editor-0.2.0-setup.exe` na página de
+Baixe `markdown-editor-0.2.1-setup.exe` na página de
 [releases](https://github.com/JosielSantos/markdown-editor/releases) e execute o
 arquivo. Durante a instalação, você pode associar as extensões `.md` e
 `.markdown` ao Markdown Editor e escolher se o programa deve ser iniciado ao
 final.
 
-Como alternativa, baixe `markdown-editor-0.2.0-portable.zip` e extraia seu conteúdo. A
+Como alternativa, baixe `markdown-editor-0.2.1-portable.zip` e extraia seu conteúdo. A
 pasta `markdown-editor` criada pelo ZIP contém o programa e suas dependências,
 sem instalador ou associação automática de arquivos.
 

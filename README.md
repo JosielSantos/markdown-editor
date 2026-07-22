@@ -35,6 +35,7 @@ do Windows.
 | Salvar como | `Ctrl+Shift+S` |
 | Ir para uma linha | `Ctrl+G` |
 | Abrir as opções | `Alt+O` |
+| Mostrar problemas | `Ctrl+M` |
 | Exportar HTML ao lado do Markdown | `F2` |
 | Escolher onde exportar o HTML | `Ctrl+F2` |
 | Abrir a visualização | `F9` |
@@ -53,6 +54,10 @@ O menu **Arquivo > Arquivos recentes** mantém até nove documentos. Ao iniciar
 o editor novamente, o último arquivo é reaberto na linha em que estava. Esse
 comportamento pode ser desativado em **Ferramentas > Opções**, na aba **Geral**.
 O programa também memoriza separadamente a última linha visitada em cada arquivo.
+
+`Ctrl+M` mostra os erros e avisos encontrados pelo Marksman, com nível, linha e
+mensagem. Selecione um problema e pressione `Enter` para ir até a linha; use
+`Esc` para fechar a lista.
 
 ## Markdown aceito
 

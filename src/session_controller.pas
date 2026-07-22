@@ -28,12 +28,15 @@ type
         );
         procedure Persist(const CurrentFileName: string);
         procedure PositionCursorAtLine(LineNumber: Integer);
+        procedure RememberFilePosition(const FileName: string);
         procedure Restore;
+        procedure RestoreFilePosition(const FileName: string);
     end;
 
 implementation
 
 uses
+    File_Position_History,
     LCLIntf,
     LCLType,
     Line_Navigation,
@@ -61,6 +64,7 @@ end;
 
 procedure TSessionController.Persist(const CurrentFileName: string);
 begin
+    RememberFilePosition(CurrentFileName);
     try
         SaveLastSession(SettingsFileName, CurrentFileName, EditorMemo.CaretPos.Y + 1);
     except
@@ -75,6 +79,18 @@ begin
     EditorMemo.SelStart := MemoLineStartIndex(EditorMemo.Lines, LineNumber);
     if OwnerForm.Visible and EditorMemo.CanFocus then
         EditorMemo.SetFocus;
+end;
+
+procedure TSessionController.RememberFilePosition(const FileName: string);
+begin
+    if (FileName = '') or not FileExists(FileName) then
+        Exit;
+    try
+        SaveFileLine(SettingsFileName, FileName, EditorMemo.CaretPos.Y + 1);
+    except
+        on Error: Exception do
+            ShowError('Erro ao salvar posição do arquivo', Error.Message);
+    end;
 end;
 
 procedure TSessionController.Restore;
@@ -103,6 +119,21 @@ begin
     end;
     if LoadDocumentHandler(Session.FileName) then
         PositionCursorAtLine(Session.LineNumber);
+end;
+
+procedure TSessionController.RestoreFilePosition(const FileName: string);
+var
+    LineNumber: Integer;
+begin
+    if FileName = '' then
+        Exit;
+    try
+        LineNumber := LoadFileLine(SettingsFileName, FileName);
+        PositionCursorAtLine(LineNumber);
+    except
+        on Error: Exception do
+            ShowError('Erro ao restaurar posição do arquivo', Error.Message);
+    end;
 end;
 
 end.

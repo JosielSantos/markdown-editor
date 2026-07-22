@@ -99,9 +99,13 @@ Para compilar e executar os testes:
 ```powershell
 git clone --recurse-submodules https://github.com/JosielSantos/markdown-editor.git
 cd markdown-editor
+.\scripts\setup-marksman.ps1
 .\scripts\build.ps1 -Mode Debug
 .\scripts\test.ps1
 ```
+
+O script baixa a versão fixada do Marksman e confere seu hash SHA-256. O
+servidor roda em segundo plano para analisar o documento aberto.
 
 As orientações para contribuir estão em [AGENTS.md](AGENTS.md). Licenças e
 avisos das bibliotecas utilizadas estão em

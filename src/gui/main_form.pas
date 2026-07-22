@@ -8,6 +8,7 @@ interface
 uses
     Classes,
     Forms,
+    Language_Server_Controller,
     Preferences,
     Recent_Files_Controller,
     Session_Controller,
@@ -19,6 +20,7 @@ type
         CurrentFileName: string;
         EditorPreferences: TEditorPreferences;
         EditorMemo: TMemo;
+        LanguageServer: TLanguageServerController;
         LastSavedContent: string;
         RecentFiles: TRecentFilesController;
         Session: TSessionController;
@@ -125,6 +127,7 @@ begin
     EditorPreferences := LoadEditorPreferences(DefaultSettingsFileName);
     CreateMenuBar;
     CreateEditor;
+    LanguageServer := TLanguageServerController.Create(Self, DefaultMarksmanFileName);
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);
     CurrentFileName := '';
     LastSavedContent := '';
@@ -134,6 +137,7 @@ end;
 
 destructor TEditorForm.Destroy;
 begin
+    LanguageServer.Free;
     Session.Free;
     RecentFiles.Free;
     inherited Destroy;
@@ -168,6 +172,7 @@ end;
 
 procedure TEditorForm.EditorChanged(Sender: TObject);
 begin
+    LanguageServer.DocumentChanged(EditorMemo.Text);
     UpdateWindowTitle;
 end;
 
@@ -248,6 +253,7 @@ begin
     if not HandleUnsavedChanges then
         Exit;
     Session.RememberFilePosition(CurrentFileName);
+    LanguageServer.CloseDocument;
     EditorMemo.Clear;
     CurrentFileName := '';
     MarkDocumentSaved;
@@ -260,24 +266,30 @@ begin
         LoadMarkdownDocument(FileName);
         Exit;
     end;
+    LanguageServer.CloseDocument;
     EditorMemo.Clear;
     CurrentFileName := ExpandFileName(FileName);
     MarkDocumentSaved;
+    LanguageServer.OpenDocument(CurrentFileName, EditorMemo.Text);
 end;
 
 function TEditorForm.LoadMarkdownDocument(const FileName: string): Boolean;
 var
+    DocumentContent: string;
     ResolvedFileName: string;
 begin
     Result := False;
     ResolvedFileName := ExpandFileName(FileName);
     Session.RememberFilePosition(CurrentFileName);
     try
-        EditorMemo.Text := ReadUtf8TextFile(ResolvedFileName);
+        DocumentContent := ReadUtf8TextFile(ResolvedFileName);
+        LanguageServer.CloseDocument;
+        EditorMemo.Text := DocumentContent;
         CurrentFileName := ResolvedFileName;
         MarkDocumentSaved;
         RecentFiles.Remember(CurrentFileName);
         Session.RestoreFilePosition(CurrentFileName);
+        LanguageServer.OpenDocument(CurrentFileName, EditorMemo.Text);
         Result := True;
     except
         on Error: Exception do
@@ -333,6 +345,7 @@ begin
         MarkDocumentSaved;
         RecentFiles.Remember(CurrentFileName);
         Session.RememberFilePosition(CurrentFileName);
+        LanguageServer.DocumentSaved(CurrentFileName, EditorMemo.Text);
         Result := True;
     except
         on Error: Exception do

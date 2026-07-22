@@ -6,11 +6,12 @@ The application entry point is `markdown_editor.lpr`; Lazarus project settings
 and package links live in `markdown_editor.lpi`. Production units are grouped
 by responsibility under `src/`: `app/` handles startup concerns, `core/` holds
 UI-independent editor rules, `gui/` contains forms, controllers, and dialogs,
-and `services/` contains file, settings, and Markdown operations. Keep unit
-files in the directory that matches their responsibility, such as
-`gui/dialogs/insert_link.pas` and `services/markdown/renderer.pas`. FPCUnit
-suites mirror the production structure under `tests/`, while their console
-runner remains at `tests/test_runner.pas`. Build helpers are in `scripts/`; the Inno Setup definition is under
+and `services/` contains file, settings, Markdown, and language-server
+operations. Keep unit files in the directory that matches their responsibility,
+such as `gui/dialogs/insert_link.pas`, `services/markdown/renderer.pas`, and
+`services/language_server/lsp_protocol.pas`. FPCUnit suites mirror the
+production structure under `tests/`, while their console runner remains at
+`tests/test_runner.pas`. Build helpers are in `scripts/`; the Inno Setup definition is under
 `installer/`. Treat `vendor/` as read-only: its
 MarkdownEngine, WebView4Delphi, and argparser-fp revisions are Git submodules. Generated files
 belong in `bin/`, `dist/`, `lib/`, or `.lazarus/`.
@@ -21,16 +22,17 @@ Initialize dependencies after cloning:
 
 ```powershell
 git submodule update --init
+.\scripts\setup-marksman.ps1
 .\scripts\build.ps1 -Mode Debug
-.\scripts\format.ps1
+.\scripts\format.ps1 -PasfmtPath .\pasfmt.exe
 .\scripts\test.ps1
 .\scripts\update-version.ps1 -Version 0.3.0
 .\scripts\build.ps1 -Mode Release
 .\scripts\package-release.ps1 -Version 0.3.0
 ```
 
-The build script registers Lazarus packages and copies `WebView2Loader.dll` to
-`bin/`. The format script runs pasfmt only on project-owned Pascal sources;
+The build script registers Lazarus packages and copies `WebView2Loader.dll` and
+`marksman.exe` to `bin/`. The format script runs pasfmt only on project-owned Pascal sources;
 use `-Check` to verify formatting without writes. The test script builds the
 application, compiles the FPCUnit suite, and runs its console runner. Launch locally with
 `.\bin\markdown-editor.exe .\example.md`. Development requires FPC 3.2.2+,

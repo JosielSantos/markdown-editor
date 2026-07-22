@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="21">
+    <Units Count="23">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -171,6 +171,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gui_Helpers"/>
       </Unit20>
+      <Unit21>
+        <Filename Value="src/link_dialog.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Link_Dialog"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="src/markdown_link.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Markdown_Link"/>
+      </Unit22>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

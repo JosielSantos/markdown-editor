@@ -6,11 +6,15 @@ cópia em HTML.
 
 ## Instalação
 
-Baixe `markdown-editor-0.1.0-setup.exe` na página de
+Baixe `markdown-editor-0.2.0-setup.exe` na página de
 [releases](https://github.com/JosielSantos/markdown-editor/releases) e execute o
 arquivo. Durante a instalação, você pode associar as extensões `.md` e
 `.markdown` ao Markdown Editor e escolher se o programa deve ser iniciado ao
 final.
+
+Como alternativa, baixe `markdown-editor-0.2.0-portable.zip` e extraia seu conteúdo. A
+pasta `markdown-editor` criada pelo ZIP contém o programa e suas dependências,
+sem instalador ou associação automática de arquivos.
 
 O programa é destinado ao Windows 10 ou 11 de 64 bits e precisa do Microsoft
 Edge WebView2 Runtime. Esse componente normalmente já está presente em
@@ -29,6 +33,7 @@ do Windows.
 | Abrir um arquivo Markdown | `Ctrl+O` |
 | Salvar | `Ctrl+S` |
 | Salvar como | `Ctrl+Shift+S` |
+| Ir para uma linha | `Ctrl+G` |
 | Exportar HTML ao lado do Markdown | `F2` |
 | Escolher onde exportar o HTML | `Ctrl+F2` |
 | Abrir a visualização | `F9` |
@@ -42,6 +47,10 @@ removido.
 `F2` usa o nome do documento atual e troca sua extensão por `.html`. Em um
 documento ainda sem nome, o programa pergunta onde criar o HTML. `Ctrl+F2`
 sempre permite escolher outro nome ou diretório.
+
+O menu **Arquivo > Arquivos recentes** mantém até nove documentos. Ao iniciar
+o editor novamente, o último arquivo é reaberto na linha em que estava. O
+programa também memoriza separadamente a última linha visitada em cada arquivo.
 
 ## Markdown aceito
 

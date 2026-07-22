@@ -12,7 +12,8 @@ uses
     Test_Link_Navigation,
     Test_Line_Navigation,
     Test_Markdown_Renderer,
-    Test_Recent_Files;
+    Test_Recent_Files,
+    Test_Session_State;
 
 var
     Runner: TTestRunner;

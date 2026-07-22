@@ -9,6 +9,7 @@ uses
     Classes;
 
 function EffectiveLineCount(LineCount: Integer): Integer;
+function ClampLineNumber(LineNumber, LineCount: Integer): Integer;
 function MemoLineStartIndex(const Lines: TStrings; LineNumber: Integer): Integer;
 function TryParseLineNumber(const Value: string; LineCount: Integer; out LineNumber: Integer): Boolean;
 
@@ -22,6 +23,15 @@ begin
     if LineCount < 1 then
         Exit(1);
     Result := LineCount;
+end;
+
+function ClampLineNumber(LineNumber, LineCount: Integer): Integer;
+begin
+    Result := LineNumber;
+    if Result < 1 then
+        Result := 1;
+    if Result > EffectiveLineCount(LineCount) then
+        Result := EffectiveLineCount(LineCount);
 end;
 
 function MemoLineStartIndex(const Lines: TStrings; LineNumber: Integer): Integer;

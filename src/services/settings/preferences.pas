@@ -8,6 +8,7 @@ interface
 type
     TEditorPreferences = record
         LoadLastFile: Boolean;
+        MarkdownCheckerArguments: string;
         MarkdownCheckerExecutableFileName: string;
         UseMarkdownChecker: Boolean;
     end;
@@ -29,12 +30,14 @@ const
     GeneralSection = 'General';
     LoadLastFileKey = 'LoadLastFile';
     MarkdownCheckerSection = 'MarkdownLanguageServer';
+    MarkdownCheckerArgumentsKey = 'Arguments';
     MarkdownCheckerEnabledKey = 'Enabled';
     MarkdownCheckerExecutableFileNameKey = 'ExecutableFileName';
 
 function DefaultEditorPreferences(const DefaultMarkdownCheckerExecutableFileName: string): TEditorPreferences;
 begin
     Result.LoadLastFile := True;
+    Result.MarkdownCheckerArguments := '';
     Result.MarkdownCheckerExecutableFileName := DefaultMarkdownCheckerExecutableFileName;
     Result.UseMarkdownChecker := True;
 end;
@@ -50,6 +53,8 @@ begin
     Settings := TMemIniFile.Create(SettingsFileName);
     try
         Result.LoadLastFile := Settings.ReadBool(GeneralSection, LoadLastFileKey, Result.LoadLastFile);
+        Result.MarkdownCheckerArguments :=
+            Settings.ReadString(MarkdownCheckerSection, MarkdownCheckerArgumentsKey, Result.MarkdownCheckerArguments);
         Result.MarkdownCheckerExecutableFileName :=
             Settings.ReadString(
                 MarkdownCheckerSection,
@@ -71,6 +76,11 @@ begin
     Settings := TMemIniFile.Create(SettingsFileName);
     try
         Settings.WriteBool(GeneralSection, LoadLastFileKey, EditorPreferences.LoadLastFile);
+        Settings.WriteString(
+            MarkdownCheckerSection,
+            MarkdownCheckerArgumentsKey,
+            EditorPreferences.MarkdownCheckerArguments
+        );
         Settings.WriteBool(MarkdownCheckerSection, MarkdownCheckerEnabledKey, EditorPreferences.UseMarkdownChecker);
         Settings.WriteString(
             MarkdownCheckerSection,

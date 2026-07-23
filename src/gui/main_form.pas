@@ -399,6 +399,16 @@ end;
 
 procedure TEditorForm.ShowProblems(Sender: TObject);
 begin
+    if not EditorPreferences.UseMarkdownChecker then
+    begin
+        LCLIntf.MessageBox(
+            Handle,
+            'Habilite o verificador de Markdown nas opções para consultar a lista de problemas.',
+            'Verificador de Markdown desabilitado',
+            MB_OK or MB_ICONWARNING
+        );
+        Exit;
+    end;
     LanguageServer.ShowProblems;
 end;
 

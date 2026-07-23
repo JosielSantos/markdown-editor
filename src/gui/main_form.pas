@@ -7,6 +7,7 @@ interface
 
 uses
     Classes,
+    Document_State,
     Forms,
     Preferences,
     Recent_Files_Controller,
@@ -16,10 +17,9 @@ uses
 type
     TEditorForm = class(TForm)
     private
-        CurrentFileName: string;
+        Document: TDocumentState;
         EditorPreferences: TEditorPreferences;
         EditorMemo: TMemo;
-        LastSavedContent: string;
         RecentFiles: TRecentFilesController;
         Session: TSessionController;
         procedure CanCloseEditor(Sender: TObject; var CanClose: Boolean);
@@ -62,7 +62,6 @@ uses
     Controls,
     Dialogs,
     Accessibility,
-    Document_State,
     Editor_Menu,
     Files,
     Go_To_Line,
@@ -126,8 +125,7 @@ begin
     CreateMenuBar;
     CreateEditor;
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);
-    CurrentFileName := '';
-    LastSavedContent := '';
+    Document := CreateDocumentState;
     OnCloseQuery := @CanCloseEditor;
     UpdateWindowTitle;
 end;
@@ -143,7 +141,7 @@ procedure TEditorForm.CanCloseEditor(Sender: TObject; var CanClose: Boolean);
 begin
     CanClose := HandleUnsavedChanges;
     if CanClose then
-        Session.Persist(CurrentFileName);
+        Session.Persist(Document.FileName);
 end;
 
 function TEditorForm.ChooseMarkdownSavePath: Boolean;
@@ -156,11 +154,11 @@ begin
         SaveDialog.Filter := 'Arquivos Markdown|*.md;*.markdown|Todos os arquivos|*.*';
         SaveDialog.DefaultExt := 'md';
         SaveDialog.Options := [ofOverwritePrompt, ofEnableSizing];
-        if CurrentFileName <> '' then
-            SaveDialog.FileName := CurrentFileName;
+        if Document.FileName <> '' then
+            SaveDialog.FileName := Document.FileName;
         Result := SaveDialog.Execute;
         if Result then
-            CurrentFileName := SaveDialog.FileName;
+            Document.FileName := SaveDialog.FileName;
     finally
         SaveDialog.Free;
     end;
@@ -178,17 +176,17 @@ end;
 
 procedure TEditorForm.ExportHtml(Sender: TObject);
 begin
-    if CurrentFileName = '' then
+    if Document.FileName = '' then
         ExportHtmlAs(Sender)
     else
-        ExportHtmlToFile(HtmlExportFileName(CurrentFileName));
+        ExportHtmlToFile(HtmlExportFileName(Document.FileName));
 end;
 
 procedure TEditorForm.ExportHtmlAs(Sender: TObject);
 var
     HtmlFileName: string;
 begin
-    if ChooseHtmlExportFile(Self, CurrentFileName, HtmlFileName) then
+    if ChooseHtmlExportFile(Self, Document.FileName, HtmlFileName) then
         ExportHtmlToFile(HtmlFileName);
 end;
 
@@ -215,7 +213,7 @@ function TEditorForm.HandleUnsavedChanges: Boolean;
 var
     Choice: Integer;
 begin
-    if not HasContentChanged(EditorMemo.Text, LastSavedContent) then
+    if not HasContentChanged(EditorMemo.Text, Document.SavedContent) then
         Exit(True);
     Choice :=
         LCLIntf.MessageBox(
@@ -247,9 +245,9 @@ procedure TEditorForm.NewDocument(Sender: TObject);
 begin
     if not HandleUnsavedChanges then
         Exit;
-    Session.RememberFilePosition(CurrentFileName);
+    Session.RememberFilePosition(Document.FileName);
     EditorMemo.Clear;
-    CurrentFileName := '';
+    Document := CreateDocumentState;
     MarkDocumentSaved;
 end;
 
@@ -261,23 +259,25 @@ begin
         Exit;
     end;
     EditorMemo.Clear;
-    CurrentFileName := ExpandFileName(FileName);
+    Document := CreateDocumentState(ExpandFileName(FileName));
     MarkDocumentSaved;
 end;
 
 function TEditorForm.LoadMarkdownDocument(const FileName: string): Boolean;
 var
+    LoadedEncoding: TDocumentEncoding;
     ResolvedFileName: string;
 begin
     Result := False;
     ResolvedFileName := ExpandFileName(FileName);
-    Session.RememberFilePosition(CurrentFileName);
+    Session.RememberFilePosition(Document.FileName);
     try
-        EditorMemo.Text := ReadUtf8TextFile(ResolvedFileName);
-        CurrentFileName := ResolvedFileName;
+        EditorMemo.Text := ReadTextFile(ResolvedFileName, LoadedEncoding);
+        Document.FileName := ResolvedFileName;
+        Document.Encoding := LoadedEncoding;
         MarkDocumentSaved;
-        RecentFiles.Remember(CurrentFileName);
-        Session.RestoreFilePosition(CurrentFileName);
+        RecentFiles.Remember(Document.FileName);
+        Session.RestoreFilePosition(Document.FileName);
         Result := True;
     except
         on Error: Exception do
@@ -287,7 +287,7 @@ end;
 
 procedure TEditorForm.MarkDocumentSaved;
 begin
-    LastSavedContent := EditorMemo.Text;
+    Document.SavedContent := EditorMemo.Text;
     UpdateWindowTitle;
 end;
 
@@ -326,13 +326,13 @@ end;
 function TEditorForm.SaveCurrentDocument: Boolean;
 begin
     Result := False;
-    if (CurrentFileName = '') and not ChooseMarkdownSavePath then
+    if (Document.FileName = '') and not ChooseMarkdownSavePath then
         Exit;
     try
-        WriteUtf8TextFile(CurrentFileName, EditorMemo.Text);
+        WriteTextFile(Document.FileName, EditorMemo.Text, Document.Encoding);
         MarkDocumentSaved;
-        RecentFiles.Remember(CurrentFileName);
-        Session.RememberFilePosition(CurrentFileName);
+        RecentFiles.Remember(Document.FileName);
+        Session.RememberFilePosition(Document.FileName);
         Result := True;
     except
         on Error: Exception do
@@ -349,12 +349,12 @@ procedure TEditorForm.SaveMarkdownAs(Sender: TObject);
 var
     PreviousFileName: string;
 begin
-    PreviousFileName := CurrentFileName;
+    PreviousFileName := Document.FileName;
     Session.RememberFilePosition(PreviousFileName);
-    CurrentFileName := '';
+    Document.FileName := '';
     if not ChooseMarkdownSavePath then
     begin
-        CurrentFileName := PreviousFileName;
+        Document.FileName := PreviousFileName;
         Exit;
     end;
     SaveCurrentDocument;
@@ -397,11 +397,11 @@ procedure TEditorForm.UpdateWindowTitle;
 var
     DocumentName: string;
 begin
-    if CurrentFileName = '' then
+    if Document.FileName = '' then
         DocumentName := 'Sem título'
     else
-        DocumentName := ExtractFileName(CurrentFileName);
-    if HasContentChanged(EditorMemo.Text, LastSavedContent) then
+        DocumentName := ExtractFileName(Document.FileName);
+    if HasContentChanged(EditorMemo.Text, Document.SavedContent) then
         DocumentName := DocumentName + ' *';
     Caption := DocumentName + ' — Markdown Editor';
 end;

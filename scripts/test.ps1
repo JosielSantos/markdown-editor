@@ -38,6 +38,15 @@ if ($null -eq $argumentParserUnit) {
 }
 $argumentParserUnits = $argumentParserUnit.DirectoryName
 
+$lazUtilsSearchPath = Join-Path $lazarusDirectory 'components\lazutils\lib'
+$lazUtilsUnit = Get-ChildItem $lazUtilsSearchPath -Recurse -Filter 'lconvencoding.ppu' -File |
+    Select-Object -First 1
+if ($null -eq $lazUtilsUnit) {
+    throw 'Unidades compiladas do LazUtils não foram encontradas.'
+}
+$lazUtilsUnits = $lazUtilsUnit.DirectoryName
+$testUnitArguments += ('-Fu' + $lazUtilsUnits)
+
 New-Item -ItemType Directory -Force $unitOutput, $binaryOutput | Out-Null
 $testRunnerSource = Join-Path $projectRoot 'tests\test_runner.pas'
 & $fpc '-l-' '-v0' '-ve' '-Mobjfpc' '-Sh' $sourceUnitArguments `

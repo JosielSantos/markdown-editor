@@ -21,6 +21,7 @@ type
         GoToLine: TNotifyEvent;
         InsertLink: TNotifyEvent;
         ShowOptions: TNotifyEvent;
+        ShowProblems: TNotifyEvent;
         ShowPreview: TNotifyEvent;
     end;
 
@@ -86,6 +87,7 @@ begin
     AddMenuItem(InsertMenu, '&Link...', ShortCut(Ord('L'), [ssAlt, ssShift]), Actions.InsertLink);
 
     ViewMenu := AddTopLevelMenu(Result, '&Visualizar');
+    AddMenuItem(ViewMenu, '&Problemas', ShortCut(Ord('M'), [ssCtrl]), Actions.ShowProblems);
     AddMenuItem(ViewMenu, '&Renderizar Markdown', ShortCut(VK_F9, []), Actions.ShowPreview);
 
     ToolsMenu := AddTopLevelMenu(Result, '&Ferramentas');

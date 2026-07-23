@@ -36,6 +36,7 @@ type
         function HandleUnsavedChanges: Boolean;
         procedure InsertLink(Sender: TObject);
         procedure MarkDocumentSaved;
+        procedure NavigateToDiagnostic(LineNumber: Integer);
         procedure NewDocument(Sender: TObject);
         procedure OpenMarkdown(Sender: TObject);
         procedure OpenRecentMarkdown(const FileName: string);
@@ -46,6 +47,7 @@ type
         procedure SaveMarkdownAs(Sender: TObject);
         procedure ShowErrorMessage(const DialogTitle, ErrorMessage: string);
         procedure ShowOptions(Sender: TObject);
+        procedure ShowProblems(Sender: TObject);
         procedure ShowPreview(Sender: TObject);
         procedure UpdateWindowTitle;
     public
@@ -114,6 +116,7 @@ begin
     Actions.GoToLine := @GoToLine;
     Actions.InsertLink := @InsertLink;
     Actions.ShowOptions := @ShowOptions;
+    Actions.ShowProblems := @ShowProblems;
     Actions.ShowPreview := @ShowPreview;
     Menu := BuildEditorMenu(Self, Actions, RecentFilesMenu);
     RecentFiles := TRecentFilesController.Create(Self, RecentFilesMenu, @OpenRecentMarkdown, DefaultSettingsFileName);
@@ -129,7 +132,7 @@ begin
     EditorPreferences := LoadEditorPreferences(DefaultSettingsFileName, DefaultLanguageServerExecutableFileName);
     CreateMenuBar;
     CreateEditor;
-    LanguageServer := TLanguageServerController.Create(Self);
+    LanguageServer := TLanguageServerController.Create(Self, @NavigateToDiagnostic);
     if EditorPreferences.UseMarkdownChecker then
         LanguageServer.Start(EditorPreferences.MarkdownCheckerExecutableFileName);
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);
@@ -286,6 +289,11 @@ begin
     UpdateWindowTitle;
 end;
 
+procedure TEditorForm.NavigateToDiagnostic(LineNumber: Integer);
+begin
+    Session.PositionCursorAtLine(LineNumber);
+end;
+
 procedure TEditorForm.OpenMarkdown(Sender: TObject);
 var
     OpenDialog: TOpenDialog;
@@ -384,6 +392,11 @@ begin
         on Error: Exception do
             ShowErrorMessage('Erro ao salvar opções', Error.Message);
     end;
+end;
+
+procedure TEditorForm.ShowProblems(Sender: TObject);
+begin
+    LanguageServer.ShowProblems;
 end;
 
 procedure TEditorForm.ShowPreview(Sender: TObject);

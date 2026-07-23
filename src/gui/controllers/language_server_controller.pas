@@ -9,27 +9,38 @@ uses
     Classes,
     ExtCtrls,
     Forms,
-    Lsp_Client_Thread;
+    Lsp_Client_Thread,
+    Lsp_Diagnostics;
 
 type
+    TDiagnosticLineEvent = procedure(LineNumber: Integer) of object;
+
     TLanguageServerController = class
     private
         ActiveDocumentUri: string;
         ChangeDueAt: QWord;
         ChangePending: Boolean;
         Client: TLspClientThread;
+        Diagnostics: TLspDiagnosticArray;
+        NavigateToLineHandler: TDiagnosticLineEvent;
         OwnerForm: TCustomForm;
         PendingText: string;
         Timer: TTimer;
+        procedure DiagnosticsReceived(
+            Sender: TObject;
+            const DocumentUri: string;
+            const NewDiagnostics: TLspDiagnosticArray
+        );
         procedure LanguageServerError(Sender: TObject; const ErrorMessage: string);
         procedure TimerTick(Sender: TObject);
     public
-        constructor Create(TheOwnerForm: TCustomForm);
+        constructor Create(TheOwnerForm: TCustomForm; TheNavigateToLineHandler: TDiagnosticLineEvent);
         destructor Destroy; override;
         procedure CloseDocument;
         procedure DocumentChanged(const Text: string);
         procedure DocumentSaved(const FileName, Text: string);
         procedure OpenDocument(const FileName, Text: string);
+        procedure ShowProblems;
         procedure Start(const ServerExecutableFileName: string);
         procedure Stop;
     end;
@@ -41,6 +52,8 @@ implementation
 uses
     LCLIntf,
     LCLType,
+    Lsp_Protocol,
+    Problems,
     SysUtils,
     URIParser;
 
@@ -59,9 +72,10 @@ begin
         Result := '';
 end;
 
-constructor TLanguageServerController.Create(TheOwnerForm: TCustomForm);
+constructor TLanguageServerController.Create(TheOwnerForm: TCustomForm; TheNavigateToLineHandler: TDiagnosticLineEvent);
 begin
     OwnerForm := TheOwnerForm;
+    NavigateToLineHandler := TheNavigateToLineHandler;
     Timer := TTimer.Create(OwnerForm);
     Timer.Enabled := False;
     Timer.Interval := TimerIntervalMilliseconds;
@@ -102,7 +116,7 @@ begin
         Exit;
     end;
     Stop;
-    Client := TLspClientThread.Create(ServerExecutableFileName, nil, @LanguageServerError);
+    Client := TLspClientThread.Create(ServerExecutableFileName, @DiagnosticsReceived, @LanguageServerError);
     Timer.Enabled := True;
 end;
 
@@ -110,6 +124,7 @@ procedure TLanguageServerController.Stop;
 begin
     Timer.Enabled := False;
     ChangePending := False;
+    SetLength(Diagnostics, 0);
     ActiveDocumentUri := '';
     FreeAndNil(Client);
 end;
@@ -127,6 +142,7 @@ begin
         Exit;
     end;
     ChangePending := False;
+    SetLength(Diagnostics, 0);
     ActiveDocumentUri := DocumentUri;
     Client.OpenDocument(DocumentUri, Text);
 end;
@@ -134,6 +150,7 @@ end;
 procedure TLanguageServerController.CloseDocument;
 begin
     ChangePending := False;
+    SetLength(Diagnostics, 0);
     ActiveDocumentUri := '';
     if Assigned(Client) then
         Client.CloseDocument;
@@ -165,6 +182,24 @@ begin
     Client.SaveDocument;
 end;
 
+procedure TLanguageServerController.DiagnosticsReceived(
+    Sender: TObject;
+    const DocumentUri: string;
+    const NewDiagnostics: TLspDiagnosticArray
+);
+begin
+    if not DocumentUrisMatch(DocumentUri, ActiveDocumentUri) then
+        Exit;
+    Diagnostics := Copy(NewDiagnostics, 0, Length(NewDiagnostics));
+end;
+
+procedure TLanguageServerController.ShowProblems;
+var
+    LineNumber: Integer;
+begin
+    if ChooseProblemLine(OwnerForm, Diagnostics, LineNumber) and Assigned(NavigateToLineHandler) then
+        NavigateToLineHandler(LineNumber);
+end;
 procedure TLanguageServerController.TimerTick(Sender: TObject);
 begin
     if ChangePending and (GetTickCount64 >= ChangeDueAt) then

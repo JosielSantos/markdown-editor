@@ -10,6 +10,7 @@ type
 
     TLspDiagnostic = record
         LineNumber: Integer;
+        MessageText: string;
         Severity: TLspDiagnosticSeverity;
     end;
 
@@ -41,6 +42,7 @@ end;
 function ParseDiagnostic(Item: TJSONData; out Diagnostic: TLspDiagnostic): Boolean;
 var
     LineValue: TJSONData;
+    MessageValue: TJSONData;
     RangeValue: TJSONData;
     SeverityValue: TJSONData;
     StartValue: TJSONData;
@@ -49,6 +51,7 @@ begin
     if Item.JSONType <> jtObject then
         Exit;
     SeverityValue := TJSONObject(Item).Find('severity');
+    MessageValue := TJSONObject(Item).Find('message');
     RangeValue := TJSONObject(Item).Find('range');
     if not Assigned(SeverityValue) or not Assigned(RangeValue) or (RangeValue.JSONType <> jtObject) then
         Exit;
@@ -62,6 +65,10 @@ begin
     if not Assigned(LineValue) then
         Exit;
     Diagnostic.LineNumber := LineValue.AsInteger + 1;
+    if Assigned(MessageValue) then
+        Diagnostic.MessageText := MessageValue.AsString
+    else
+        Diagnostic.MessageText := '';
     Result := Diagnostic.LineNumber > 0;
 end;
 

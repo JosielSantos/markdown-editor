@@ -35,6 +35,7 @@ do Windows.
 | Salvar como | `Ctrl+Shift+S` |
 | Ir para uma linha | `Ctrl+G` |
 | Abrir as opções | `Alt+O` |
+| Mostrar problemas | `Ctrl+M` |
 | Exportar HTML ao lado do Markdown | `F2` |
 | Escolher onde exportar o HTML | `Ctrl+F2` |
 | Abrir a visualização | `F9` |
@@ -64,6 +65,10 @@ servidor de linguagem para Markdown, o
 
 Para usar o Marksman, coloque `marksman.exe` no mesmo diretório do executável do
 editor. Quando o arquivo está disponível, o editor o detecta automaticamente.
+
+`Ctrl+M` mostra os erros e avisos encontrados pelo servidor de linguagem
+Markdown, com nível, linha e mensagem. Selecione um problema e pressione `Enter`
+para ir até a linha; use `Esc` para fechar a lista.
 
 ## Markdown aceito
 

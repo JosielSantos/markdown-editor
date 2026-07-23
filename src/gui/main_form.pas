@@ -23,7 +23,6 @@ type
         RecentFiles: TRecentFilesController;
         Session: TSessionController;
         procedure CanCloseEditor(Sender: TObject; var CanClose: Boolean);
-        function ChooseMarkdownSavePath: Boolean;
         procedure CreateEditor;
         procedure CreateMenuBar;
         procedure EditorChanged(Sender: TObject);
@@ -39,6 +38,8 @@ type
         procedure OpenMarkdown(Sender: TObject);
         procedure OpenRecentMarkdown(const FileName: string);
         function SaveCurrentDocument: Boolean;
+        function SaveDocumentAs: Boolean;
+        function SaveDocumentTo(const FileName: string; const Encoding: TDocumentEncoding): Boolean;
         procedure SaveMarkdown(Sender: TObject);
         procedure SaveMarkdownAs(Sender: TObject);
         procedure ShowErrorMessage(const DialogTitle, ErrorMessage: string);
@@ -71,6 +72,7 @@ uses
     LCLIntf,
     LCLType,
     Link,
+    Markdown_Save_Dialog,
     Menus,
     Options,
     Preview_Form,
@@ -142,26 +144,6 @@ begin
     CanClose := HandleUnsavedChanges;
     if CanClose then
         Session.Persist(Document.FileName);
-end;
-
-function TEditorForm.ChooseMarkdownSavePath: Boolean;
-var
-    SaveDialog: TSaveDialog;
-begin
-    SaveDialog := TSaveDialog.Create(Self);
-    try
-        SaveDialog.Title := 'Salvar arquivo Markdown';
-        SaveDialog.Filter := 'Arquivos Markdown|*.md;*.markdown|Todos os arquivos|*.*';
-        SaveDialog.DefaultExt := 'md';
-        SaveDialog.Options := [ofOverwritePrompt, ofEnableSizing];
-        if Document.FileName <> '' then
-            SaveDialog.FileName := Document.FileName;
-        Result := SaveDialog.Execute;
-        if Result then
-            Document.FileName := SaveDialog.FileName;
-    finally
-        SaveDialog.Free;
-    end;
 end;
 
 procedure TEditorForm.EditorChanged(Sender: TObject);
@@ -325,11 +307,29 @@ end;
 
 function TEditorForm.SaveCurrentDocument: Boolean;
 begin
+    if Document.FileName = '' then
+        Exit(SaveDocumentAs);
+    Result := SaveDocumentTo(Document.FileName, Document.Encoding);
+end;
+
+function TEditorForm.SaveDocumentAs: Boolean;
+var
+    SelectedEncoding: TDocumentEncoding;
+    SelectedFileName: string;
+begin
     Result := False;
-    if (Document.FileName = '') and not ChooseMarkdownSavePath then
+    if not ChooseMarkdownSaveFile(Self, Document.FileName, Document.Encoding, SelectedFileName, SelectedEncoding) then
         Exit;
+    Result := SaveDocumentTo(SelectedFileName, SelectedEncoding);
+end;
+
+function TEditorForm.SaveDocumentTo(const FileName: string; const Encoding: TDocumentEncoding): Boolean;
+begin
+    Result := False;
     try
-        WriteTextFile(Document.FileName, EditorMemo.Text, Document.Encoding);
+        WriteTextFile(FileName, EditorMemo.Text, Encoding);
+        Document.FileName := FileName;
+        Document.Encoding := Encoding;
         MarkDocumentSaved;
         RecentFiles.Remember(Document.FileName);
         Session.RememberFilePosition(Document.FileName);
@@ -346,18 +346,9 @@ begin
 end;
 
 procedure TEditorForm.SaveMarkdownAs(Sender: TObject);
-var
-    PreviousFileName: string;
 begin
-    PreviousFileName := Document.FileName;
-    Session.RememberFilePosition(PreviousFileName);
-    Document.FileName := '';
-    if not ChooseMarkdownSavePath then
-    begin
-        Document.FileName := PreviousFileName;
-        Exit;
-    end;
-    SaveCurrentDocument;
+    Session.RememberFilePosition(Document.FileName);
+    SaveDocumentAs;
 end;
 
 procedure TEditorForm.ShowErrorMessage(const DialogTitle, ErrorMessage: string);

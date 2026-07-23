@@ -25,6 +25,7 @@ type
         ErrorDeliveryQueued: Boolean;
         Initialized: Boolean;
         Lock: TRTLCriticalSection;
+        ServerArguments: string;
         ServerExecutableFileName: string;
         OnDiagnostics: TLspDiagnosticsEvent;
         OnError: TLspErrorEvent;
@@ -50,7 +51,7 @@ type
         procedure Execute; override;
     public
         constructor Create(
-            const TheServerExecutableFileName: string;
+            const TheServerExecutableFileName, TheServerArguments: string;
             TheDiagnosticsHandler: TLspDiagnosticsEvent;
             TheErrorHandler: TLspErrorEvent
         );
@@ -64,6 +65,7 @@ type
 implementation
 
 uses
+    Language_Server_Process,
     Math,
     SysUtils;
 
@@ -72,13 +74,14 @@ const
     WorkerPauseMilliseconds = 10;
 
 constructor TLspClientThread.Create(
-    const TheServerExecutableFileName: string;
+    const TheServerExecutableFileName, TheServerArguments: string;
     TheDiagnosticsHandler: TLspDiagnosticsEvent;
     TheErrorHandler: TLspErrorEvent
 );
 begin
     inherited Create(True);
     ServerExecutableFileName := TheServerExecutableFileName;
+    ServerArguments := TheServerArguments;
     OnDiagnostics := TheDiagnosticsHandler;
     OnError := TheErrorHandler;
     OutgoingMessages := TStringList.Create;
@@ -263,9 +266,7 @@ begin
     ServerProcess := TProcess.Create(nil);
     MessageBuffer := TLspMessageBuffer.Create;
     try
-        ServerProcess.Executable := ServerExecutableFileName;
-        ServerProcess.Options := [poUsePipes, poNoConsole];
-        ServerProcess.CurrentDirectory := ExtractFileDir(ServerExecutableFileName);
+        ConfigureLanguageServerProcess(ServerProcess, ServerExecutableFileName, ServerArguments);
         ServerProcess.Execute;
         QueueJson(BuildInitializeRequest(GetProcessID, ''));
         while not Terminated and ServerProcess.Running do

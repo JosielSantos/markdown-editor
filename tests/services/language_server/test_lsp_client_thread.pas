@@ -63,7 +63,7 @@ begin
     ReceivedDocumentUri := '';
     ServerError := '';
     DocumentUri := FilenameToURI(ExpandFileName('teste-lsp-temporario.md'));
-    Client := TLspClientThread.Create('marksman.exe', @HandleDiagnostics, @HandleError);
+    Client := TLspClientThread.Create('marksman.exe', '', @HandleDiagnostics, @HandleError);
     try
         Client.OpenDocument(
             DocumentUri,

@@ -49,6 +49,7 @@ begin
     try
         EditorPreferences := LoadEditorPreferences(SettingsFileName, DefaultExecutableFileName);
         AssertTrue(EditorPreferences.UseMarkdownChecker);
+        AssertEquals('', EditorPreferences.MarkdownCheckerArguments);
         AssertEquals(DefaultExecutableFileName, EditorPreferences.MarkdownCheckerExecutableFileName);
     finally
         DeleteFile(SettingsFileName);
@@ -79,6 +80,7 @@ end;
 
 procedure TPreferencesTests.PersistsMarkdownCheckerPreferences;
 const
+    Arguments = '"C:\Program Files\checker\server.js" --stdio';
     ExecutableFileName = 'C:\Tools\custom-checker.exe';
 var
     EditorPreferences: TEditorPreferences;
@@ -88,11 +90,13 @@ begin
     try
         EditorPreferences := DefaultEditorPreferences;
         EditorPreferences.UseMarkdownChecker := False;
+        EditorPreferences.MarkdownCheckerArguments := Arguments;
         EditorPreferences.MarkdownCheckerExecutableFileName := ExecutableFileName;
         SaveEditorPreferences(SettingsFileName, EditorPreferences);
 
         EditorPreferences := LoadEditorPreferences(SettingsFileName);
         AssertFalse(EditorPreferences.UseMarkdownChecker);
+        AssertEquals(Arguments, EditorPreferences.MarkdownCheckerArguments);
         AssertEquals(ExecutableFileName, EditorPreferences.MarkdownCheckerExecutableFileName);
     finally
         DeleteFile(SettingsFileName);

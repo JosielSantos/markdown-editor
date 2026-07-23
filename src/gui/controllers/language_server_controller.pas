@@ -51,7 +51,7 @@ type
         procedure DocumentSaved(const FileName, Text: string);
         procedure OpenDocument(const FileName, Text: string);
         procedure ShowProblems;
-        procedure Start(const ServerExecutableFileName: string);
+        procedure Start(const ServerExecutableFileName, ServerArguments: string);
         procedure Stop;
     end;
 
@@ -116,7 +116,7 @@ begin
     LCLIntf.MessageBox(OwnerForm.Handle, PChar(ErrorMessage), 'Erro no servidor de linguagem', MB_OK or MB_ICONERROR);
 end;
 
-procedure TLanguageServerController.Start(const ServerExecutableFileName: string);
+procedure TLanguageServerController.Start(const ServerExecutableFileName, ServerArguments: string);
 begin
     if ServerExecutableFileName = '' then
     begin
@@ -135,7 +135,8 @@ begin
         Exit;
     end;
     Stop;
-    Client := TLspClientThread.Create(ServerExecutableFileName, @DiagnosticsReceived, @LanguageServerError);
+    Client :=
+        TLspClientThread.Create(ServerExecutableFileName, ServerArguments, @DiagnosticsReceived, @LanguageServerError);
     Timer.Enabled := True;
 end;
 

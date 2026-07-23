@@ -11,6 +11,7 @@ uses
     Test_File_Position_History,
     Test_Files,
     Test_Html_Export,
+    Test_Language_Server_Process,
     Test_Link_Navigation,
     Test_Line_Navigation,
     Test_Link,

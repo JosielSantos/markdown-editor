@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="33">
+    <Units Count="34">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -231,6 +231,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Diagnostic_Sound"/>
       </Unit32>
+      <Unit33>
+        <Filename Value="src/services/language_server/language_server_process.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Language_Server_Process"/>
+      </Unit33>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

@@ -13,7 +13,9 @@ type
     TPreferencesTests = class(TTestCase)
     published
         procedure DefaultsToLoadingLastFile;
+        procedure DefaultsToUsingMarkdownChecker;
         procedure PersistsLoadLastFilePreference;
+        procedure PersistsMarkdownCheckerPreferences;
     end;
 
 implementation
@@ -36,6 +38,23 @@ begin
     end;
 end;
 
+procedure TPreferencesTests.DefaultsToUsingMarkdownChecker;
+const
+    DefaultExecutableFileName = 'C:\Tools\markdown-checker.exe';
+var
+    EditorPreferences: TEditorPreferences;
+    SettingsFileName: string;
+begin
+    SettingsFileName := GetTempFileName('', 'mdeditor');
+    try
+        EditorPreferences := LoadEditorPreferences(SettingsFileName, DefaultExecutableFileName);
+        AssertTrue(EditorPreferences.UseMarkdownChecker);
+        AssertEquals(DefaultExecutableFileName, EditorPreferences.MarkdownCheckerExecutableFileName);
+    finally
+        DeleteFile(SettingsFileName);
+    end;
+end;
+
 procedure TPreferencesTests.PersistsLoadLastFilePreference;
 var
     EditorPreferences: TEditorPreferences;
@@ -53,6 +72,28 @@ begin
         SaveEditorPreferences(SettingsFileName, EditorPreferences);
         EditorPreferences := LoadEditorPreferences(SettingsFileName);
         AssertTrue(EditorPreferences.LoadLastFile);
+    finally
+        DeleteFile(SettingsFileName);
+    end;
+end;
+
+procedure TPreferencesTests.PersistsMarkdownCheckerPreferences;
+const
+    ExecutableFileName = 'C:\Tools\custom-checker.exe';
+var
+    EditorPreferences: TEditorPreferences;
+    SettingsFileName: string;
+begin
+    SettingsFileName := GetTempFileName('', 'mdeditor');
+    try
+        EditorPreferences := DefaultEditorPreferences;
+        EditorPreferences.UseMarkdownChecker := False;
+        EditorPreferences.MarkdownCheckerExecutableFileName := ExecutableFileName;
+        SaveEditorPreferences(SettingsFileName, EditorPreferences);
+
+        EditorPreferences := LoadEditorPreferences(SettingsFileName);
+        AssertFalse(EditorPreferences.UseMarkdownChecker);
+        AssertEquals(ExecutableFileName, EditorPreferences.MarkdownCheckerExecutableFileName);
     finally
         DeleteFile(SettingsFileName);
     end;

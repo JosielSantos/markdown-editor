@@ -24,12 +24,14 @@ type
         procedure LanguageServerError(Sender: TObject; const ErrorMessage: string);
         procedure TimerTick(Sender: TObject);
     public
-        constructor Create(TheOwnerForm: TCustomForm; const ServerExecutableFileName: string);
+        constructor Create(TheOwnerForm: TCustomForm);
         destructor Destroy; override;
         procedure CloseDocument;
         procedure DocumentChanged(const Text: string);
         procedure DocumentSaved(const FileName, Text: string);
         procedure OpenDocument(const FileName, Text: string);
+        procedure Start(const ServerExecutableFileName: string);
+        procedure Stop;
     end;
 
 function DefaultLanguageServerExecutableFileName: string;
@@ -47,37 +49,69 @@ const
     TimerIntervalMilliseconds = 100;
 
 function DefaultLanguageServerExecutableFileName: string;
+var
+    CandidateFileName: string;
 begin
-    Result := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))) + 'marksman.exe';
+    CandidateFileName := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))) + 'marksman.exe';
+    if FileExists(CandidateFileName) then
+        Result := CandidateFileName
+    else
+        Result := '';
 end;
 
-constructor TLanguageServerController.Create(TheOwnerForm: TCustomForm; const ServerExecutableFileName: string);
+constructor TLanguageServerController.Create(TheOwnerForm: TCustomForm);
 begin
     OwnerForm := TheOwnerForm;
     Timer := TTimer.Create(OwnerForm);
     Timer.Enabled := False;
     Timer.Interval := TimerIntervalMilliseconds;
     Timer.OnTimer := @TimerTick;
-    if not FileExists(ServerExecutableFileName) then
-    begin
-        LanguageServerError(Self, 'O servidor de linguagem marksman.exe não foi encontrado.');
-        Exit;
-    end;
-    Client := TLspClientThread.Create(ServerExecutableFileName, nil, @LanguageServerError);
-    Timer.Enabled := True;
 end;
 
 destructor TLanguageServerController.Destroy;
 begin
-    Timer.Enabled := False;
-    Client.Free;
+    Stop;
     Timer.Free;
     inherited Destroy;
 end;
 
 procedure TLanguageServerController.LanguageServerError(Sender: TObject; const ErrorMessage: string);
 begin
+    if (Sender <> nil) and (Sender <> Client) then
+        Exit;
+    Stop;
     LCLIntf.MessageBox(OwnerForm.Handle, PChar(ErrorMessage), 'Erro no servidor de linguagem', MB_OK or MB_ICONERROR);
+end;
+
+procedure TLanguageServerController.Start(const ServerExecutableFileName: string);
+begin
+    if ServerExecutableFileName = '' then
+    begin
+        LanguageServerError(nil, 'O executável do verificador de Markdown não foi configurado.');
+        Exit;
+    end;
+    if not FileExists(ServerExecutableFileName) then
+    begin
+        LanguageServerError(
+            nil,
+            Format(
+                'O executável do verificador de Markdown não foi encontrado:%s%s',
+                [LineEnding, ServerExecutableFileName]
+            )
+        );
+        Exit;
+    end;
+    Stop;
+    Client := TLspClientThread.Create(ServerExecutableFileName, nil, @LanguageServerError);
+    Timer.Enabled := True;
+end;
+
+procedure TLanguageServerController.Stop;
+begin
+    Timer.Enabled := False;
+    ChangePending := False;
+    ActiveDocumentUri := '';
+    FreeAndNil(Client);
 end;
 
 procedure TLanguageServerController.OpenDocument(const FileName, Text: string);

@@ -264,7 +264,6 @@ begin
     MessageBuffer := TLspMessageBuffer.Create;
     try
         ServerProcess.Executable := ServerExecutableFileName;
-        ServerProcess.Parameters.Add('server');
         ServerProcess.Options := [poUsePipes, poNoConsole];
         ServerProcess.CurrentDirectory := ExtractFileDir(ServerExecutableFileName);
         ServerProcess.Execute;

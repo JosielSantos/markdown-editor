@@ -26,9 +26,12 @@ const
     DiagnosticsMessage =
         '{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{'
             + '"uri":"file:///C:/livro.md","diagnostics":['
-            + '{"severity":2,"range":{"start":{"line":4,"character":0},"end":{"line":4,"character":2}}},'
-            + '{"severity":1,"range":{"start":{"line":8,"character":1},"end":{"line":8,"character":3}}},'
-            + '{"severity":3,"range":{"start":{"line":10,"character":0},"end":{"line":10,"character":1}}}'
+            + '{"severity":2,"message":"Referência ausente","range":{"start":{"line":4,"character":0},'
+            + '"end":{"line":4,"character":2}}},'
+            + '{"severity":1,"message":"Âncora inexistente","range":{"start":{"line":8,"character":1},'
+            + '"end":{"line":8,"character":3}}},'
+            + '{"severity":3,"message":"Informação","range":{"start":{"line":10,"character":0},'
+            + '"end":{"line":10,"character":1}}}'
             + ']}}';
 
 procedure TLspDiagnosticsTests.ParsesWarningsAndErrors;
@@ -39,6 +42,8 @@ begin
     AssertTrue(ParsePublishDiagnostics(DiagnosticsMessage, DocumentUri, Diagnostics));
     AssertEquals('file:///C:/livro.md', DocumentUri);
     AssertEquals(2, Length(Diagnostics));
+    AssertEquals('Referência ausente', Diagnostics[0].MessageText);
+    AssertEquals('Âncora inexistente', Diagnostics[1].MessageText);
     AssertEquals(Ord(ldsWarning), Ord(HighestSeverityAtLine(Diagnostics, 5)));
     AssertEquals(Ord(ldsError), Ord(HighestSeverityAtLine(Diagnostics, 9)));
     AssertEquals(Ord(ldsNone), Ord(HighestSeverityAtLine(Diagnostics, 11)));

@@ -50,7 +50,7 @@ procedure PlayDiagnosticSound(Severity: TLspDiagnosticSeverity);
 var
     SoundThread: TDiagnosticSoundThread;
 begin
-    if Severity = ldsNone then
+    if Severity in [ldsNone, ldsInformation] then
         Exit;
     SoundThread := TDiagnosticSoundThread.Create(Severity);
     SoundThread.Start;

@@ -6,7 +6,7 @@ unit Lsp_Diagnostics;
 interface
 
 type
-    TLspDiagnosticSeverity = (ldsNone, ldsWarning, ldsError);
+    TLspDiagnosticSeverity = (ldsNone, ldsInformation, ldsWarning, ldsError);
 
     TLspDiagnostic = record
         LineNumber: Integer;
@@ -34,6 +34,7 @@ begin
     case SeverityValue of
         1: Result := ldsError;
         2: Result := ldsWarning;
+        3: Result := ldsInformation;
     else
         Result := ldsNone;
     end;
@@ -131,6 +132,8 @@ begin
                 Exit(ldsError);
             if Diagnostic.Severity = ldsWarning then
                 Result := ldsWarning;
+            if (Diagnostic.Severity = ldsInformation) and (Result = ldsNone) then
+                Result := ldsInformation;
         end;
 end;
 

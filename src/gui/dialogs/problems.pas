@@ -46,10 +46,13 @@ type
 
 function SeverityText(Severity: TLspDiagnosticSeverity): string;
 begin
-    if Severity = ldsError then
-        Result := 'Erro'
+    case Severity of
+        ldsError: Result := 'Erro';
+        ldsWarning: Result := 'Aviso';
+        ldsInformation: Result := 'Informação';
     else
-        Result := 'Aviso';
+        Result := '';
+    end;
 end;
 
 constructor TProblemsForm.Create(TheOwner: TComponent);

@@ -13,7 +13,7 @@ type
     TLspDiagnosticsTests = class(TTestCase)
     published
         procedure IgnoresNonDiagnosticMessages;
-        procedure ParsesWarningsAndErrors;
+        procedure ParsesWarningsErrorsAndInformation;
         procedure PrefersErrorOnSharedLine;
     end;
 
@@ -34,19 +34,20 @@ const
             + '"end":{"line":10,"character":1}}}'
             + ']}}';
 
-procedure TLspDiagnosticsTests.ParsesWarningsAndErrors;
+procedure TLspDiagnosticsTests.ParsesWarningsErrorsAndInformation;
 var
     Diagnostics: TLspDiagnosticArray;
     DocumentUri: string;
 begin
     AssertTrue(ParsePublishDiagnostics(DiagnosticsMessage, DocumentUri, Diagnostics));
     AssertEquals('file:///C:/livro.md', DocumentUri);
-    AssertEquals(2, Length(Diagnostics));
+    AssertEquals(3, Length(Diagnostics));
     AssertEquals('Referência ausente', Diagnostics[0].MessageText);
     AssertEquals('Âncora inexistente', Diagnostics[1].MessageText);
+    AssertEquals('Informação', Diagnostics[2].MessageText);
     AssertEquals(Ord(ldsWarning), Ord(HighestSeverityAtLine(Diagnostics, 5)));
     AssertEquals(Ord(ldsError), Ord(HighestSeverityAtLine(Diagnostics, 9)));
-    AssertEquals(Ord(ldsNone), Ord(HighestSeverityAtLine(Diagnostics, 11)));
+    AssertEquals(Ord(ldsInformation), Ord(HighestSeverityAtLine(Diagnostics, 11)));
 end;
 
 procedure TLspDiagnosticsTests.PrefersErrorOnSharedLine;

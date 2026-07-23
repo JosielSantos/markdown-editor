@@ -20,6 +20,17 @@ $webViewLoader = Join-Path $projectRoot `
 $webViewUnitOutput = Join-Path $projectRoot `
     'vendor\webview4delphi\packages\lib'
 
+function Invoke-Lazbuild([string[]] $Arguments) {
+    $output = @(& $lazbuild '--quiet' '--quiet' $Arguments 2>&1)
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        foreach ($line in $output) {
+            Write-Host $line
+        }
+        exit $exitCode
+    }
+}
+
 if (-not (Test-Path $markdownPackage) -or
     -not (Test-Path $webViewPackage) -or
     -not (Test-Path $argumentParserPackage) -or
@@ -29,33 +40,34 @@ if (-not (Test-Path $markdownPackage) -or
 
 Push-Location $projectRoot
 try {
-    & $lazbuild "--lazarusdir=$lazarusDirectory" `
-        "--pcp=$configDirectory" '--add-package-link' $markdownPackage
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
-    }
-
-    & $lazbuild "--lazarusdir=$lazarusDirectory" `
-        "--pcp=$configDirectory" '--add-package-link' $webViewPackage
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
-    }
-
-    & $lazbuild "--lazarusdir=$lazarusDirectory" `
-        "--pcp=$configDirectory" '--add-package-link' $argumentParserPackage
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
-    }
-
-    & $lazbuild "--lazarusdir=$lazarusDirectory" `
-        "--pcp=$configDirectory" "--build-mode=$Mode" `
+    Invoke-Lazbuild @(
+        "--lazarusdir=$lazarusDirectory",
+        "--pcp=$configDirectory",
+        '--add-package-link',
+        $markdownPackage
+    )
+    Invoke-Lazbuild @(
+        "--lazarusdir=$lazarusDirectory",
+        "--pcp=$configDirectory",
+        '--add-package-link',
+        $webViewPackage
+    )
+    Invoke-Lazbuild @(
+        "--lazarusdir=$lazarusDirectory",
+        "--pcp=$configDirectory",
+        '--add-package-link',
+        $argumentParserPackage
+    )
+    Invoke-Lazbuild @(
+        "--lazarusdir=$lazarusDirectory",
+        "--pcp=$configDirectory",
+        "--build-mode=$Mode",
         'markdown_editor.lpi'
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
-    }
+    )
 
     Copy-Item $webViewLoader `
         (Join-Path $projectRoot 'bin\WebView2Loader.dll') -Force
+    Write-Host "Build $Mode concluido."
 } finally {
     Pop-Location
     if (Test-Path $webViewUnitOutput) {

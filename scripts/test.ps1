@@ -40,7 +40,7 @@ $argumentParserUnits = $argumentParserUnit.DirectoryName
 
 New-Item -ItemType Directory -Force $unitOutput, $binaryOutput | Out-Null
 $testRunnerSource = Join-Path $projectRoot 'tests\test_runner.pas'
-& $fpc '-Mobjfpc' '-Sh' $sourceUnitArguments `
+& $fpc '-l-' '-v0' '-ve' '-Mobjfpc' '-Sh' $sourceUnitArguments `
     $testUnitArguments "-Fu$markdownUnits" "-Fu$argumentParserUnits" `
     "-FU$unitOutput" "-FE$binaryOutput" $testRunnerSource
 if ($LASTEXITCODE -ne 0) {

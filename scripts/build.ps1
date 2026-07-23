@@ -17,7 +17,6 @@ $argumentParserPackage = Join-Path $projectRoot `
     'vendor\argparser-fp\packages\lazarus\argparser_fp.lpk'
 $webViewLoader = Join-Path $projectRoot `
     'vendor\webview4delphi\bin64\WebView2Loader.dll'
-$marksman = Join-Path $projectRoot 'marksman.exe'
 $webViewUnitOutput = Join-Path $projectRoot `
     'vendor\webview4delphi\packages\lib'
 
@@ -38,10 +37,6 @@ if (-not (Test-Path $markdownPackage) -or
     -not (Test-Path $webViewLoader)) {
     throw 'Dependência ausente. Execute: git submodule update --init'
 }
-if (-not (Test-Path $marksman)) {
-    throw 'Marksman ausente. Execute: .\scripts\setup-marksman.ps1'
-}
-
 Push-Location $projectRoot
 try {
     Invoke-Lazbuild @(
@@ -71,8 +66,6 @@ try {
 
     Copy-Item $webViewLoader `
         (Join-Path $projectRoot 'bin\WebView2Loader.dll') -Force
-    Copy-Item $marksman `
-        (Join-Path $projectRoot 'bin\marksman.exe') -Force
     Write-Host "Build $Mode concluido."
 } finally {
     Pop-Location

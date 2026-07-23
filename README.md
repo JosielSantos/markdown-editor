@@ -54,6 +54,17 @@ o editor novamente, o último arquivo é reaberto na linha em que estava. Esse
 comportamento pode ser desativado em **Ferramentas > Opções**, na aba **Geral**.
 O programa também memoriza separadamente a última linha visitada em cada arquivo.
 
+## Verificador de Markdown
+
+O verificador de Markdown usa um servidor de linguagem instalado separadamente.
+Ele é opcional: o editor funciona normalmente quando nenhum servidor está
+disponível e não inclui um servidor em seus pacotes. Se você não conhece um
+servidor de linguagem para Markdown, o
+[Marksman](https://github.com/artempyanykh/marksman) é uma opção.
+
+Para usar o Marksman, coloque `marksman.exe` no mesmo diretório do executável do
+editor. Quando o arquivo está disponível, o editor o detecta automaticamente.
+
 ## Markdown aceito
 
 O editor processa GitHub Flavored Markdown, incluindo:
@@ -94,18 +105,25 @@ markdown-editor.exe associate-files
 ## Desenvolvimento
 
 O projeto usa Free Pascal, Lazarus e dependências mantidas como submódulos Git.
-Para compilar e executar os testes:
+Para compilar a aplicação:
 
 ```powershell
 git clone --recurse-submodules https://github.com/JosielSantos/markdown-editor.git
 cd markdown-editor
-.\scripts\setup-marksman.ps1
 .\scripts\build.ps1 -Mode Debug
+```
+
+Para compilar a aplicação e executar os testes:
+
+```powershell
 .\scripts\test.ps1
 ```
 
-O script baixa a versão fixada do Marksman e confere seu hash SHA-256. O
-servidor roda em segundo plano para analisar o documento aberto.
+Depois de compilar a aplicação com sucesso, `test.ps1` instala em
+`bin\marksman.exe` a versão do servidor usada pelo teste de integração, somente
+quando ela ainda não está disponível. O download tem seu hash SHA-256
+verificado. Para preparar esse servidor antecipadamente, execute
+`.\scripts\setup-marksman.ps1`.
 
 As orientações para contribuir estão em [AGENTS.md](AGENTS.md). Licenças e
 avisos das bibliotecas utilizadas estão em

@@ -8,6 +8,7 @@ $unitOutput = Join-Path $projectRoot 'lib\tests'
 $binaryOutput = Join-Path $projectRoot 'bin'
 $sourceRoot = Join-Path $projectRoot 'src'
 $testRoot = Join-Path $projectRoot 'tests'
+$marksman = Join-Path $binaryOutput 'marksman.exe'
 $sourceUnitArguments = @("-Fu$sourceRoot") + @(
     Get-ChildItem $sourceRoot -Directory -Recurse |
         ForEach-Object { "-Fu$($_.FullName)" }
@@ -20,6 +21,10 @@ $testUnitArguments = @("-Fu$testRoot") + @(
 & (Join-Path $PSScriptRoot 'build.ps1') -Mode Debug
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
+}
+
+if (-not (Test-Path -LiteralPath $marksman)) {
+    & (Join-Path $PSScriptRoot 'setup-marksman.ps1') -Destination $marksman
 }
 
 $markdownUnit = Get-ChildItem `

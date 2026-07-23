@@ -33,6 +33,7 @@ uses
     URIParser;
 
 const
+    MarkdownLspFileName = 'bin\marksman.exe';
     ResponseTimeoutMilliseconds = 5000;
 
 procedure TLspClientThreadTests.HandleDiagnostics(
@@ -57,13 +58,13 @@ var
     Deadline: QWord;
     DocumentUri: string;
 begin
-    AssertTrue('marksman.exe não encontrado', FileExists('marksman.exe'));
+    AssertTrue('Markdown LSP não encontrado', FileExists(MarkdownLspFileName));
     DiagnosticsReceived := False;
     SetLength(ReceivedDiagnostics, 0);
     ReceivedDocumentUri := '';
     ServerError := '';
     DocumentUri := FilenameToURI(ExpandFileName('teste-lsp-temporario.md'));
-    Client := TLspClientThread.Create('marksman.exe', @HandleDiagnostics, @HandleError);
+    Client := TLspClientThread.Create(MarkdownLspFileName, @HandleDiagnostics, @HandleError);
     try
         Client.OpenDocument(
             DocumentUri,
@@ -75,10 +76,10 @@ begin
             CheckSynchronize(20);
             Sleep(10);
         end;
-        AssertEquals('erro inesperado do Marksman', '', ServerError);
-        AssertTrue('o Marksman não publicou diagnósticos', DiagnosticsReceived);
-        AssertTrue('URI devolvida pelo Marksman', DocumentUrisMatch(DocumentUri, ReceivedDocumentUri));
-        AssertTrue('o Marksman não identificou a âncora inválida', Length(ReceivedDiagnostics) > 0);
+        AssertEquals('erro inesperado do Markdown LSP', '', ServerError);
+        AssertTrue('o Markdown LSP não publicou diagnósticos', DiagnosticsReceived);
+        AssertTrue('URI devolvida pelo Markdown LSP', DocumentUrisMatch(DocumentUri, ReceivedDocumentUri));
+        AssertTrue('o Markdown LSP não identificou a âncora inválida', Length(ReceivedDiagnostics) > 0);
         AssertEquals(Ord(ldsError), Ord(HighestSeverityAtLine(ReceivedDiagnostics, 3)));
         AssertEquals(Ord(ldsWarning), Ord(HighestSeverityAtLine(ReceivedDiagnostics, 4)));
     finally

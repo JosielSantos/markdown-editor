@@ -24,7 +24,7 @@ type
         procedure LanguageServerError(Sender: TObject; const ErrorMessage: string);
         procedure TimerTick(Sender: TObject);
     public
-        constructor Create(TheOwnerForm: TCustomForm; const MarksmanFileName: string);
+        constructor Create(TheOwnerForm: TCustomForm; const ServerExecutableFileName: string);
         destructor Destroy; override;
         procedure CloseDocument;
         procedure DocumentChanged(const Text: string);
@@ -32,7 +32,7 @@ type
         procedure OpenDocument(const FileName, Text: string);
     end;
 
-function DefaultMarksmanFileName: string;
+function DefaultLanguageServerExecutableFileName: string;
 
 implementation
 
@@ -46,24 +46,24 @@ const
     ChangeDelayMilliseconds = 350;
     TimerIntervalMilliseconds = 100;
 
-function DefaultMarksmanFileName: string;
+function DefaultLanguageServerExecutableFileName: string;
 begin
     Result := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))) + 'marksman.exe';
 end;
 
-constructor TLanguageServerController.Create(TheOwnerForm: TCustomForm; const MarksmanFileName: string);
+constructor TLanguageServerController.Create(TheOwnerForm: TCustomForm; const ServerExecutableFileName: string);
 begin
     OwnerForm := TheOwnerForm;
     Timer := TTimer.Create(OwnerForm);
     Timer.Enabled := False;
     Timer.Interval := TimerIntervalMilliseconds;
     Timer.OnTimer := @TimerTick;
-    if not FileExists(MarksmanFileName) then
+    if not FileExists(ServerExecutableFileName) then
     begin
         LanguageServerError(Self, 'O servidor de linguagem marksman.exe não foi encontrado.');
         Exit;
     end;
-    Client := TLspClientThread.Create(MarksmanFileName, nil, @LanguageServerError);
+    Client := TLspClientThread.Create(ServerExecutableFileName, nil, @LanguageServerError);
     Timer.Enabled := True;
 end;
 

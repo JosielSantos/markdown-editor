@@ -31,8 +31,9 @@ git submodule update --init
 .\scripts\package-release.ps1 -Version 0.3.0
 ```
 
-The build script registers Lazarus packages and copies `WebView2Loader.dll` and
-`marksman.exe` to `bin/`. The format script runs pasfmt only on project-owned Pascal sources;
+The setup script downloads `marksman.exe` to `bin/`. The build script registers
+Lazarus packages and copies `WebView2Loader.dll` to `bin/`. The format script
+runs pasfmt only on project-owned Pascal sources;
 use `-Check` to verify formatting without writes. The test script builds the
 application, compiles the FPCUnit suite, and runs its console runner. Launch locally with
 `.\bin\markdown-editor.exe .\example.md`. Development requires FPC 3.2.2+,

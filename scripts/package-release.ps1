@@ -41,7 +41,6 @@ if (-not $installerDefinition.Contains($expectedVersion)) {
 
 $releaseFiles = @(
     (Join-Path $ProjectRoot 'bin\markdown-editor.exe'),
-    (Join-Path $ProjectRoot 'bin\marksman.exe'),
     (Join-Path $ProjectRoot 'bin\WebView2Loader.dll'),
     (Join-Path $ProjectRoot 'THIRD_PARTY_NOTICES.md'),
     (Join-Path $ProjectRoot 'LICENSE')
@@ -95,7 +94,6 @@ try {
 $expectedEntries = @(
     'markdown-editor/markdown-editor.exe',
     'markdown-editor/LICENSE',
-    'markdown-editor/marksman.exe',
     'markdown-editor/THIRD_PARTY_NOTICES.md',
     'markdown-editor/WebView2Loader.dll'
 ) | Sort-Object

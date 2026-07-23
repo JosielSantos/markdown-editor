@@ -124,10 +124,12 @@ begin
     Position := poScreenCenter;
     Width := 900;
     Height := 650;
-    EditorPreferences := LoadEditorPreferences(DefaultSettingsFileName);
+    EditorPreferences := LoadEditorPreferences(DefaultSettingsFileName, DefaultLanguageServerExecutableFileName);
     CreateMenuBar;
     CreateEditor;
-    LanguageServer := TLanguageServerController.Create(Self, DefaultLanguageServerExecutableFileName);
+    LanguageServer := TLanguageServerController.Create(Self);
+    if EditorPreferences.UseMarkdownChecker then
+        LanguageServer.Start(EditorPreferences.MarkdownCheckerExecutableFileName);
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);
     CurrentFileName := '';
     LastSavedContent := '';

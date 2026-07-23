@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="34">
+    <Units Count="37">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -236,6 +236,21 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Language_Server_Process"/>
       </Unit33>
+      <Unit34>
+        <Filename Value="src/gui/dialogs/options/markdown_checker_tab.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Markdown_Checker_Tab"/>
+      </Unit34>
+      <Unit35>
+        <Filename Value="src/gui/controllers/options_controller.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Options_Controller"/>
+      </Unit35>
+      <Unit36>
+        <Filename Value="src/gui/focus_preserving_page_control.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Focus_Preserving_Page_Control"/>
+      </Unit36>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

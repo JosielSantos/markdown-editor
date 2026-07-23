@@ -105,7 +105,9 @@ cd markdown-editor
 ```
 
 O script baixa a versão fixada do Marksman e confere seu hash SHA-256. O
-servidor roda em segundo plano para analisar o documento aberto.
+servidor roda em segundo plano para analisar o documento aberto. Quando nenhum
+outro executável de servidor de linguagem é informado pela aplicação, o editor
+usa `marksman.exe` no mesmo diretório do seu próprio executável.
 
 As orientações para contribuir estão em [AGENTS.md](AGENTS.md). Licenças e
 avisos das bibliotecas utilizadas estão em

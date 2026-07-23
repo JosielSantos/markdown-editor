@@ -25,7 +25,7 @@ type
         ErrorDeliveryQueued: Boolean;
         Initialized: Boolean;
         Lock: TRTLCriticalSection;
-        MarksmanFileName: string;
+        ServerExecutableFileName: string;
         OnDiagnostics: TLspDiagnosticsEvent;
         OnError: TLspErrorEvent;
         OutgoingMessages: TStringList;
@@ -50,7 +50,7 @@ type
         procedure Execute; override;
     public
         constructor Create(
-            const TheMarksmanFileName: string;
+            const TheServerExecutableFileName: string;
             TheDiagnosticsHandler: TLspDiagnosticsEvent;
             TheErrorHandler: TLspErrorEvent
         );
@@ -72,13 +72,13 @@ const
     WorkerPauseMilliseconds = 10;
 
 constructor TLspClientThread.Create(
-    const TheMarksmanFileName: string;
+    const TheServerExecutableFileName: string;
     TheDiagnosticsHandler: TLspDiagnosticsEvent;
     TheErrorHandler: TLspErrorEvent
 );
 begin
     inherited Create(True);
-    MarksmanFileName := TheMarksmanFileName;
+    ServerExecutableFileName := TheServerExecutableFileName;
     OnDiagnostics := TheDiagnosticsHandler;
     OnError := TheErrorHandler;
     OutgoingMessages := TStringList.Create;
@@ -263,10 +263,10 @@ begin
     ServerProcess := TProcess.Create(nil);
     MessageBuffer := TLspMessageBuffer.Create;
     try
-        ServerProcess.Executable := MarksmanFileName;
+        ServerProcess.Executable := ServerExecutableFileName;
         ServerProcess.Parameters.Add('server');
         ServerProcess.Options := [poUsePipes, poNoConsole];
-        ServerProcess.CurrentDirectory := ExtractFileDir(MarksmanFileName);
+        ServerProcess.CurrentDirectory := ExtractFileDir(ServerExecutableFileName);
         ServerProcess.Execute;
         QueueJson(BuildInitializeRequest(GetProcessID, ''));
         while not Terminated and ServerProcess.Running do
@@ -277,7 +277,7 @@ begin
             Sleep(WorkerPauseMilliseconds);
         end;
         if not Terminated then
-            QueueError('O servidor Marksman foi encerrado inesperadamente.');
+            QueueError('O servidor de linguagem foi encerrado inesperadamente.');
     except
         on Error: Exception do
             QueueError(Error.Message);

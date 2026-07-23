@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="36">
+    <Units Count="37">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -246,6 +246,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Options_Controller"/>
       </Unit35>
+      <Unit36>
+        <Filename Value="src/gui/focus_preserving_page_control.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Focus_Preserving_Page_Control"/>
+      </Unit36>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

@@ -31,6 +31,7 @@ uses
     ComCtrls,
     Controls,
     ExtCtrls,
+    Focus_Preserving_Page_Control,
     Forms,
     LCLIntf,
     LCLType,
@@ -106,7 +107,7 @@ begin
     StatusLabel.Top := 20;
     StatusLabel.Caption := '';
 
-    OptionsTabs := TPageControl.Create(Self);
+    OptionsTabs := TFocusPreservingPageControl.Create(Self);
     OptionsTabs.Parent := Self;
     OptionsTabs.Align := alClient;
     OptionsTabs.TabStop := True;

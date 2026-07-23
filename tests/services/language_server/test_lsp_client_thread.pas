@@ -17,9 +17,11 @@ type
         DiagnosticsReceived: Boolean;
         ReceivedDiagnostics: TLspDiagnosticArray;
         ReceivedDocumentUri: string;
+        ServerReady: Boolean;
         ServerError: string;
         procedure HandleDiagnostics(Sender: TObject; const DocumentUri: string; const Diagnostics: TLspDiagnosticArray);
         procedure HandleError(Sender: TObject; const ErrorMessage: string);
+        procedure HandleReady(Sender: TObject);
     published
         procedure ReceivesMarksmanDiagnostics;
     end;
@@ -51,6 +53,11 @@ begin
     ServerError := ErrorMessage;
 end;
 
+procedure TLspClientThreadTests.HandleReady(Sender: TObject);
+begin
+    ServerReady := True;
+end;
+
 procedure TLspClientThreadTests.ReceivesMarksmanDiagnostics;
 var
     Client: TLspClientThread;
@@ -61,9 +68,10 @@ begin
     DiagnosticsReceived := False;
     SetLength(ReceivedDiagnostics, 0);
     ReceivedDocumentUri := '';
+    ServerReady := False;
     ServerError := '';
     DocumentUri := FilenameToURI(ExpandFileName('teste-lsp-temporario.md'));
-    Client := TLspClientThread.Create('marksman.exe', '', @HandleDiagnostics, @HandleError);
+    Client := TLspClientThread.Create('marksman.exe', '', @HandleDiagnostics, @HandleError, @HandleReady);
     try
         Client.OpenDocument(
             DocumentUri,
@@ -76,6 +84,7 @@ begin
             Sleep(10);
         end;
         AssertEquals('erro inesperado do Marksman', '', ServerError);
+        AssertTrue('o Marksman não concluiu a inicialização', ServerReady);
         AssertTrue('o Marksman não publicou diagnósticos', DiagnosticsReceived);
         AssertTrue('URI devolvida pelo Marksman', DocumentUrisMatch(DocumentUri, ReceivedDocumentUri));
         AssertTrue('o Marksman não identificou a âncora inválida', Length(ReceivedDiagnostics) > 0);

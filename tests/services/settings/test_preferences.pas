@@ -13,7 +13,7 @@ type
     TPreferencesTests = class(TTestCase)
     published
         procedure DefaultsToLoadingLastFile;
-        procedure DefaultsToUsingMarkdownChecker;
+        procedure DefaultsToNotUsingMarkdownChecker;
         procedure PersistsLoadLastFilePreference;
         procedure PersistsMarkdownCheckerPreferences;
     end;
@@ -38,7 +38,7 @@ begin
     end;
 end;
 
-procedure TPreferencesTests.DefaultsToUsingMarkdownChecker;
+procedure TPreferencesTests.DefaultsToNotUsingMarkdownChecker;
 const
     DefaultExecutableFileName = 'C:\Tools\markdown-checker.exe';
 var
@@ -48,7 +48,7 @@ begin
     SettingsFileName := GetTempFileName('', 'mdeditor');
     try
         EditorPreferences := LoadEditorPreferences(SettingsFileName, DefaultExecutableFileName);
-        AssertTrue(EditorPreferences.UseMarkdownChecker);
+        AssertFalse(EditorPreferences.UseMarkdownChecker);
         AssertEquals('', EditorPreferences.MarkdownCheckerArguments);
         AssertEquals(DefaultExecutableFileName, EditorPreferences.MarkdownCheckerExecutableFileName);
     finally
@@ -89,13 +89,13 @@ begin
     SettingsFileName := GetTempFileName('', 'mdeditor');
     try
         EditorPreferences := DefaultEditorPreferences;
-        EditorPreferences.UseMarkdownChecker := False;
+        EditorPreferences.UseMarkdownChecker := True;
         EditorPreferences.MarkdownCheckerArguments := Arguments;
         EditorPreferences.MarkdownCheckerExecutableFileName := ExecutableFileName;
         SaveEditorPreferences(SettingsFileName, EditorPreferences);
 
         EditorPreferences := LoadEditorPreferences(SettingsFileName);
-        AssertFalse(EditorPreferences.UseMarkdownChecker);
+        AssertTrue(EditorPreferences.UseMarkdownChecker);
         AssertEquals(Arguments, EditorPreferences.MarkdownCheckerArguments);
         AssertEquals(ExecutableFileName, EditorPreferences.MarkdownCheckerExecutableFileName);
     finally

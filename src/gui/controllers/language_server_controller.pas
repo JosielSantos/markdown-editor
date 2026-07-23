@@ -10,7 +10,8 @@ uses
     ExtCtrls,
     Forms,
     Lsp_Client_Thread,
-    Lsp_Diagnostics;
+    Lsp_Diagnostics,
+    StdCtrls;
 
 type
     TDiagnosticLineEvent = procedure(LineNumber: Integer) of object;
@@ -22,10 +23,15 @@ type
         ChangePending: Boolean;
         Client: TLspClientThread;
         Diagnostics: TLspDiagnosticArray;
+        EditorMemo: TMemo;
+        LastCaretLine: Integer;
+        LastSignaledLine: Integer;
+        LastSignaledSeverity: TLspDiagnosticSeverity;
         NavigateToLineHandler: TDiagnosticLineEvent;
         OwnerForm: TCustomForm;
         PendingText: string;
         Timer: TTimer;
+        procedure CheckCaretDiagnostic;
         procedure DiagnosticsReceived(
             Sender: TObject;
             const DocumentUri: string;
@@ -34,7 +40,11 @@ type
         procedure LanguageServerError(Sender: TObject; const ErrorMessage: string);
         procedure TimerTick(Sender: TObject);
     public
-        constructor Create(TheOwnerForm: TCustomForm; TheNavigateToLineHandler: TDiagnosticLineEvent);
+        constructor Create(
+            TheOwnerForm: TCustomForm;
+            TheEditorMemo: TMemo;
+            TheNavigateToLineHandler: TDiagnosticLineEvent
+        );
         destructor Destroy; override;
         procedure CloseDocument;
         procedure DocumentChanged(const Text: string);
@@ -50,16 +60,18 @@ function DefaultLanguageServerExecutableFileName: string;
 implementation
 
 uses
+    Diagnostic_Sound,
     LCLIntf,
     LCLType,
     Lsp_Protocol,
     Problems,
     SysUtils,
-    URIParser;
+    URIParser,
+    Windows;
 
 const
     ChangeDelayMilliseconds = 350;
-    TimerIntervalMilliseconds = 100;
+    CaretPollingMilliseconds = 100;
 
 function DefaultLanguageServerExecutableFileName: string;
 var
@@ -72,13 +84,20 @@ begin
         Result := '';
 end;
 
-constructor TLanguageServerController.Create(TheOwnerForm: TCustomForm; TheNavigateToLineHandler: TDiagnosticLineEvent);
+constructor TLanguageServerController.Create(
+    TheOwnerForm: TCustomForm;
+    TheEditorMemo: TMemo;
+    TheNavigateToLineHandler: TDiagnosticLineEvent
+);
 begin
     OwnerForm := TheOwnerForm;
+    EditorMemo := TheEditorMemo;
+    LastCaretLine := -1;
+    LastSignaledLine := -1;
     NavigateToLineHandler := TheNavigateToLineHandler;
     Timer := TTimer.Create(OwnerForm);
     Timer.Enabled := False;
-    Timer.Interval := TimerIntervalMilliseconds;
+    Timer.Interval := CaretPollingMilliseconds;
     Timer.OnTimer := @TimerTick;
 end;
 
@@ -126,6 +145,7 @@ begin
     ChangePending := False;
     SetLength(Diagnostics, 0);
     ActiveDocumentUri := '';
+    LastSignaledLine := -1;
     FreeAndNil(Client);
 end;
 
@@ -136,7 +156,7 @@ begin
     if not Assigned(Client) or (FileName = '') then
         Exit;
     DocumentUri := FilenameToURI(ExpandFileName(FileName));
-    if SameText(DocumentUri, ActiveDocumentUri) then
+    if DocumentUrisMatch(DocumentUri, ActiveDocumentUri) then
     begin
         Client.ChangeDocument(Text);
         Exit;
@@ -144,6 +164,7 @@ begin
     ChangePending := False;
     SetLength(Diagnostics, 0);
     ActiveDocumentUri := DocumentUri;
+    LastSignaledLine := -1;
     Client.OpenDocument(DocumentUri, Text);
 end;
 
@@ -152,6 +173,7 @@ begin
     ChangePending := False;
     SetLength(Diagnostics, 0);
     ActiveDocumentUri := '';
+    LastSignaledLine := -1;
     if Assigned(Client) then
         Client.CloseDocument;
 end;
@@ -172,7 +194,7 @@ begin
     if not Assigned(Client) or (FileName = '') then
         Exit;
     DocumentUri := FilenameToURI(ExpandFileName(FileName));
-    if not SameText(DocumentUri, ActiveDocumentUri) then
+    if not DocumentUrisMatch(DocumentUri, ActiveDocumentUri) then
         OpenDocument(FileName, Text)
     else
     begin
@@ -191,6 +213,7 @@ begin
     if not DocumentUrisMatch(DocumentUri, ActiveDocumentUri) then
         Exit;
     Diagnostics := Copy(NewDiagnostics, 0, Length(NewDiagnostics));
+    CheckCaretDiagnostic;
 end;
 
 procedure TLanguageServerController.ShowProblems;
@@ -200,6 +223,33 @@ begin
     if ChooseProblemLine(OwnerForm, Diagnostics, LineNumber) and Assigned(NavigateToLineHandler) then
         NavigateToLineHandler(LineNumber);
 end;
+
+procedure TLanguageServerController.CheckCaretDiagnostic;
+var
+    CaretLine: Integer;
+    Severity: TLspDiagnosticSeverity;
+begin
+    CaretLine := Integer(Windows.SendMessage(EditorMemo.Handle, EM_LINEFROMCHAR, EditorMemo.SelStart, 0)) + 1;
+    if CaretLine <> LastCaretLine then
+    begin
+        LastCaretLine := CaretLine;
+        LastSignaledLine := -1;
+        LastSignaledSeverity := ldsNone;
+    end;
+    Severity := HighestSeverityAtLine(Diagnostics, CaretLine);
+    if Severity = ldsNone then
+    begin
+        LastSignaledLine := -1;
+        LastSignaledSeverity := ldsNone;
+        Exit;
+    end;
+    if (LastSignaledLine = CaretLine) and (LastSignaledSeverity = Severity) then
+        Exit;
+    PlayDiagnosticSound(Severity);
+    LastSignaledLine := CaretLine;
+    LastSignaledSeverity := Severity;
+end;
+
 procedure TLanguageServerController.TimerTick(Sender: TObject);
 begin
     if ChangePending and (GetTickCount64 >= ChangeDueAt) then
@@ -207,6 +257,7 @@ begin
         ChangePending := False;
         Client.ChangeDocument(PendingText);
     end;
+    CheckCaretDiagnostic;
 end;
 
 end.

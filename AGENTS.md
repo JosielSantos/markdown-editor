@@ -5,8 +5,8 @@
 The application entry point is `markdown_editor.lpr`; Lazarus project settings
 and package links live in `markdown_editor.lpi`. Production units are grouped
 by responsibility under `src/`: `app/` handles startup concerns, `core/` holds
-UI-independent editor rules, `gui/` contains forms, controllers, and dialogs,
-and `services/` contains file, settings, Markdown, and language-server
+UI-independent editor rules, `gui/` contains forms, controllers, dialogs, and
+user-feedback adapters, and `services/` contains file, settings, Markdown, and language-server
 operations. Keep unit files in the directory that matches their responsibility,
 such as `gui/dialogs/insert_link.pas`, `services/markdown/renderer.pas`, and
 `services/language_server/lsp_protocol.pas`. FPCUnit suites mirror the

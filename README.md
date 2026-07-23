@@ -69,6 +69,8 @@ editor. Quando o arquivo está disponível, o editor o detecta automaticamente.
 `Ctrl+M` mostra os erros e avisos encontrados pelo servidor de linguagem
 Markdown, com nível, linha e mensagem. Selecione um problema e pressione `Enter`
 para ir até a linha; use `Esc` para fechar a lista.
+Ao entrar em uma linha com erro ou aviso, o editor emite um aviso sonoro.
+
 
 ## Markdown aceito
 

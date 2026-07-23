@@ -58,19 +58,22 @@ O programa também memoriza separadamente a última linha visitada em cada arqui
 ## Verificador de Markdown
 
 O verificador de Markdown usa um servidor de linguagem instalado separadamente.
-Ele é opcional: o editor funciona normalmente quando nenhum servidor está
-disponível e não inclui um servidor em seus pacotes. Se você não conhece um
-servidor de linguagem para Markdown, o
-[Marksman](https://github.com/artempyanykh/marksman) é uma opção.
+Ele é opcional e fica desabilitado por padrão. O editor funciona normalmente sem
+ele e não inclui um servidor em seus pacotes.
 
-Para usar o Marksman, coloque `marksman.exe` no mesmo diretório do executável do
-editor. Quando o arquivo está disponível, o editor o detecta automaticamente.
+Para usar o recurso, instale um servidor de linguagem compatível com Markdown e,
+em **Ferramentas > Opções**, abra a aba **Verificador de Markdown**, habilite a
+verificação e selecione o executável. Informe argumentos quando forem necessários.
+
+Se você não conhece um servidor de linguagem para Markdown, o
+[Marksman](https://github.com/artempyanykh/marksman) é uma opção. Quando encontra
+`marksman.exe` no mesmo diretório de seu próprio executável, o editor o sugere
+automaticamente na configuração.
 
 `Ctrl+M` mostra os erros e avisos encontrados pelo servidor de linguagem
 Markdown, com nível, linha e mensagem. Selecione um problema e pressione `Enter`
 para ir até a linha; use `Esc` para fechar a lista.
 Ao entrar em uma linha com erro ou aviso, o editor emite um aviso sonoro.
-
 
 ## Markdown aceito
 

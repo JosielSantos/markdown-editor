@@ -10,6 +10,7 @@ uses
     Document_State,
     Forms,
     Language_Server_Controller,
+    Options_Controller,
     Preferences,
     Recent_Files_Controller,
     Session_Controller,
@@ -23,6 +24,7 @@ type
         EditorMemo: TMemo;
         LanguageServer: TLanguageServerController;
         RecentFiles: TRecentFilesController;
+        OptionsController: TOptionsController;
         Session: TSessionController;
         procedure CanCloseEditor(Sender: TObject; var CanClose: Boolean);
         procedure CreateEditor;
@@ -79,7 +81,6 @@ uses
     Markdown_Memo,
     Markdown_Save_Dialog,
     Menus,
-    Options,
     Preview_Form,
     Editor,
     SysUtils;
@@ -133,6 +134,7 @@ begin
     CreateMenuBar;
     CreateEditor;
     LanguageServer := TLanguageServerController.Create(Self, EditorMemo, @NavigateToDiagnostic);
+    OptionsController := TOptionsController.Create(Self, EditorMemo, LanguageServer, DefaultSettingsFileName);
     if EditorPreferences.UseMarkdownChecker then
         LanguageServer
             .Start(EditorPreferences.MarkdownCheckerExecutableFileName, EditorPreferences.MarkdownCheckerArguments);
@@ -144,6 +146,7 @@ end;
 
 destructor TEditorForm.Destroy;
 begin
+    OptionsController.Free;
     LanguageServer.Free;
     Session.Free;
     RecentFiles.Free;
@@ -380,19 +383,8 @@ begin
 end;
 
 procedure TEditorForm.ShowOptions(Sender: TObject);
-var
-    UpdatedPreferences: TEditorPreferences;
 begin
-    UpdatedPreferences := EditorPreferences;
-    if not EditEditorPreferences(Self, UpdatedPreferences) then
-        Exit;
-    try
-        SaveEditorPreferences(DefaultSettingsFileName, UpdatedPreferences);
-        EditorPreferences := UpdatedPreferences;
-    except
-        on Error: Exception do
-            ShowErrorMessage('Erro ao salvar opções', Error.Message);
-    end;
+    OptionsController.Edit(EditorPreferences, Document.FileName);
 end;
 
 procedure TEditorForm.ShowProblems(Sender: TObject);

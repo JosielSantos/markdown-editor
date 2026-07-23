@@ -39,7 +39,7 @@ begin
     Result.LoadLastFile := True;
     Result.MarkdownCheckerArguments := '';
     Result.MarkdownCheckerExecutableFileName := DefaultMarkdownCheckerExecutableFileName;
-    Result.UseMarkdownChecker := True;
+    Result.UseMarkdownChecker := False;
 end;
 
 function LoadEditorPreferences(

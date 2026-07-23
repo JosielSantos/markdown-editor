@@ -29,6 +29,7 @@ type
         ServerExecutableFileName: string;
         OnDiagnostics: TLspDiagnosticsEvent;
         OnError: TLspErrorEvent;
+        OnReady: TNotifyEvent;
         OutgoingMessages: TStringList;
         PendingDiagnostics: TLspDiagnosticArray;
         PendingDiagnosticsUri: string;
@@ -37,6 +38,7 @@ type
         ServerProcess: TProcess;
         procedure DeliverDiagnostics;
         procedure DeliverError;
+        procedure DeliverReady;
         procedure DrainErrorOutput;
         procedure HandleIncomingMessage(const JsonText: string);
         procedure MarkInitialized;
@@ -53,7 +55,8 @@ type
         constructor Create(
             const TheServerExecutableFileName, TheServerArguments: string;
             TheDiagnosticsHandler: TLspDiagnosticsEvent;
-            TheErrorHandler: TLspErrorEvent
+            TheErrorHandler: TLspErrorEvent;
+            TheReadyHandler: TNotifyEvent = nil
         );
         destructor Destroy; override;
         procedure ChangeDocument(const Text: string);
@@ -76,7 +79,8 @@ const
 constructor TLspClientThread.Create(
     const TheServerExecutableFileName, TheServerArguments: string;
     TheDiagnosticsHandler: TLspDiagnosticsEvent;
-    TheErrorHandler: TLspErrorEvent
+    TheErrorHandler: TLspErrorEvent;
+    TheReadyHandler: TNotifyEvent
 );
 begin
     inherited Create(True);
@@ -84,6 +88,7 @@ begin
     ServerArguments := TheServerArguments;
     OnDiagnostics := TheDiagnosticsHandler;
     OnError := TheErrorHandler;
+    OnReady := TheReadyHandler;
     OutgoingMessages := TStringList.Create;
     InitCriticalSection(Lock);
     Start;
@@ -201,6 +206,12 @@ begin
         OnError(Self, ErrorMessage);
 end;
 
+procedure TLspClientThread.DeliverReady;
+begin
+    if Assigned(OnReady) then
+        OnReady(Self);
+end;
+
 procedure TLspClientThread.MarkInitialized;
 begin
     EnterCriticalSection(Lock);
@@ -212,6 +223,7 @@ begin
     finally
         LeaveCriticalSection(Lock);
     end;
+    TThread.Queue(Self, @DeliverReady);
 end;
 
 procedure TLspClientThread.HandleIncomingMessage(const JsonText: string);

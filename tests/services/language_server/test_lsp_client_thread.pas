@@ -17,9 +17,11 @@ type
         DiagnosticsReceived: Boolean;
         ReceivedDiagnostics: TLspDiagnosticArray;
         ReceivedDocumentUri: string;
+        ServerReady: Boolean;
         ServerError: string;
         procedure HandleDiagnostics(Sender: TObject; const DocumentUri: string; const Diagnostics: TLspDiagnosticArray);
         procedure HandleError(Sender: TObject; const ErrorMessage: string);
+        procedure HandleReady(Sender: TObject);
     published
         procedure ReceivesMarksmanDiagnostics;
     end;
@@ -52,6 +54,11 @@ begin
     ServerError := ErrorMessage;
 end;
 
+procedure TLspClientThreadTests.HandleReady(Sender: TObject);
+begin
+    ServerReady := True;
+end;
+
 procedure TLspClientThreadTests.ReceivesMarksmanDiagnostics;
 var
     Client: TLspClientThread;
@@ -62,9 +69,10 @@ begin
     DiagnosticsReceived := False;
     SetLength(ReceivedDiagnostics, 0);
     ReceivedDocumentUri := '';
+    ServerReady := False;
     ServerError := '';
     DocumentUri := FilenameToURI(ExpandFileName('teste-lsp-temporario.md'));
-    Client := TLspClientThread.Create(MarkdownLspFileName, '', @HandleDiagnostics, @HandleError);
+    Client := TLspClientThread.Create(MarkdownLspFileName, '', @HandleDiagnostics, @HandleError, @HandleReady);
     try
         Client.OpenDocument(
             DocumentUri,
@@ -77,6 +85,7 @@ begin
             Sleep(10);
         end;
         AssertEquals('erro inesperado do Markdown LSP', '', ServerError);
+        AssertTrue('o Markdown LSP não concluiu a inicialização', ServerReady);
         AssertTrue('o Markdown LSP não publicou diagnósticos', DiagnosticsReceived);
         AssertTrue('URI devolvida pelo Markdown LSP', DocumentUrisMatch(DocumentUri, ReceivedDocumentUri));
         AssertTrue('o Markdown LSP não identificou a âncora inválida', Length(ReceivedDiagnostics) > 0);

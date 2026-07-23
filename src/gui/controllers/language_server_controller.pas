@@ -30,7 +30,13 @@ type
         NavigateToLineHandler: TDiagnosticLineEvent;
         OwnerForm: TCustomForm;
         PendingText: string;
+        ServerArguments: string;
+        ServerExecutableFileName: string;
+        ServerInitializationDueAt: QWord;
+        StartErrorHandler: TLspErrorEvent;
+        StartReadyHandler: TNotifyEvent;
         Timer: TTimer;
+        WaitingForInitialization: Boolean;
         procedure CheckCaretDiagnostic;
         procedure DiagnosticsReceived(
             Sender: TObject;
@@ -38,6 +44,7 @@ type
             const NewDiagnostics: TLspDiagnosticArray
         );
         procedure LanguageServerError(Sender: TObject; const ErrorMessage: string);
+        procedure LanguageServerReady(Sender: TObject);
         procedure TimerTick(Sender: TObject);
     public
         constructor Create(
@@ -49,10 +56,16 @@ type
         procedure CloseDocument;
         procedure DocumentChanged(const Text: string);
         procedure DocumentSaved(const FileName, Text: string);
+        function IsRunning: Boolean;
         procedure OpenDocument(const FileName, Text: string);
         procedure ShowProblems;
-        procedure Start(const ServerExecutableFileName, ServerArguments: string);
+        procedure Start(
+            const TheServerExecutableFileName, TheServerArguments: string;
+            TheReadyHandler: TNotifyEvent = nil;
+            TheErrorHandler: TLspErrorEvent = nil
+        );
         procedure Stop;
+        function UsesConfiguration(const TheServerExecutableFileName, TheServerArguments: string): Boolean;
     end;
 
 function DefaultLanguageServerExecutableFileName: string;
@@ -72,6 +85,7 @@ uses
 const
     ChangeDelayMilliseconds = 350;
     CaretPollingMilliseconds = 100;
+    InitializationTimeoutMilliseconds = 10000;
 
 function DefaultLanguageServerExecutableFileName: string;
 var
@@ -109,34 +123,83 @@ begin
 end;
 
 procedure TLanguageServerController.LanguageServerError(Sender: TObject; const ErrorMessage: string);
+var
+    ErrorHandler: TLspErrorEvent;
 begin
     if (Sender <> nil) and (Sender <> Client) then
         Exit;
+    ErrorHandler := StartErrorHandler;
     Stop;
-    LCLIntf.MessageBox(OwnerForm.Handle, PChar(ErrorMessage), 'Erro no servidor de linguagem', MB_OK or MB_ICONERROR);
+    if Assigned(ErrorHandler) then
+        ErrorHandler(Self, ErrorMessage)
+    else
+        LCLIntf
+            .MessageBox(OwnerForm.Handle, PChar(ErrorMessage), 'Erro no servidor de linguagem', MB_OK or MB_ICONERROR);
 end;
 
-procedure TLanguageServerController.Start(const ServerExecutableFileName, ServerArguments: string);
+procedure TLanguageServerController.LanguageServerReady(Sender: TObject);
+var
+    ReadyHandler: TNotifyEvent;
 begin
-    if ServerExecutableFileName = '' then
+    if Sender <> Client then
+        Exit;
+    WaitingForInitialization := False;
+    ReadyHandler := StartReadyHandler;
+    StartReadyHandler := nil;
+    StartErrorHandler := nil;
+    if Assigned(ReadyHandler) then
+        ReadyHandler(Self);
+end;
+
+procedure TLanguageServerController.Start(
+    const TheServerExecutableFileName, TheServerArguments: string;
+    TheReadyHandler: TNotifyEvent;
+    TheErrorHandler: TLspErrorEvent
+);
+begin
+    if TheServerExecutableFileName = '' then
     begin
-        LanguageServerError(nil, 'O executável do verificador de Markdown não foi configurado.');
+        if Assigned(TheErrorHandler) then
+            TheErrorHandler(Self, 'O executável do verificador de Markdown não foi configurado.')
+        else
+            LanguageServerError(nil, 'O executável do verificador de Markdown não foi configurado.');
         Exit;
     end;
-    if not FileExists(ServerExecutableFileName) then
+    if not FileExists(TheServerExecutableFileName) then
     begin
-        LanguageServerError(
-            nil,
-            Format(
-                'O executável do verificador de Markdown não foi encontrado:%s%s',
-                [LineEnding, ServerExecutableFileName]
+        if Assigned(TheErrorHandler) then
+            TheErrorHandler(
+                Self,
+                Format(
+                    'O executável do verificador de Markdown não foi encontrado:%s%s',
+                    [LineEnding, TheServerExecutableFileName]
+                )
             )
-        );
+        else
+            LanguageServerError(
+                nil,
+                Format(
+                    'O executável do verificador de Markdown não foi encontrado:%s%s',
+                    [LineEnding, TheServerExecutableFileName]
+                )
+            );
         Exit;
     end;
     Stop;
+    ServerExecutableFileName := ExpandFileName(TheServerExecutableFileName);
+    ServerArguments := TheServerArguments;
+    ServerInitializationDueAt := GetTickCount64 + InitializationTimeoutMilliseconds;
+    StartReadyHandler := TheReadyHandler;
+    StartErrorHandler := TheErrorHandler;
+    WaitingForInitialization := True;
     Client :=
-        TLspClientThread.Create(ServerExecutableFileName, ServerArguments, @DiagnosticsReceived, @LanguageServerError);
+        TLspClientThread.Create(
+            ServerExecutableFileName,
+            ServerArguments,
+            @DiagnosticsReceived,
+            @LanguageServerError,
+            @LanguageServerReady
+        );
     Timer.Enabled := True;
 end;
 
@@ -148,6 +211,27 @@ begin
     ActiveDocumentUri := '';
     LastSignaledLine := -1;
     FreeAndNil(Client);
+    ServerArguments := '';
+    ServerExecutableFileName := '';
+    StartErrorHandler := nil;
+    StartReadyHandler := nil;
+    WaitingForInitialization := False;
+end;
+
+function TLanguageServerController.IsRunning: Boolean;
+begin
+    Result := Assigned(Client);
+end;
+
+function TLanguageServerController.UsesConfiguration(
+    const TheServerExecutableFileName,
+    TheServerArguments: string
+): Boolean;
+begin
+    Result :=
+        Assigned(Client)
+            and SameFileName(ServerExecutableFileName, ExpandFileName(TheServerExecutableFileName))
+            and (ServerArguments = TheServerArguments);
 end;
 
 procedure TLanguageServerController.OpenDocument(const FileName, Text: string);
@@ -253,6 +337,14 @@ end;
 
 procedure TLanguageServerController.TimerTick(Sender: TObject);
 begin
+    if WaitingForInitialization and (GetTickCount64 >= ServerInitializationDueAt) then
+    begin
+        LanguageServerError(
+            Client,
+            'O servidor de linguagem não respondeu à inicialização dentro do tempo esperado.'
+        );
+        Exit;
+    end;
     if ChangePending and (GetTickCount64 >= ChangeDueAt) then
     begin
         ChangePending := False;

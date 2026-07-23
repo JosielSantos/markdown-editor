@@ -34,6 +34,7 @@ do Windows.
 | Salvar | `Ctrl+S` |
 | Salvar como | `Ctrl+Shift+S` |
 | Ir para uma linha | `Ctrl+G` |
+| Abrir as opções | `Alt+O` |
 | Exportar HTML ao lado do Markdown | `F2` |
 | Escolher onde exportar o HTML | `Ctrl+F2` |
 | Abrir a visualização | `F9` |
@@ -49,8 +50,9 @@ documento ainda sem nome, o programa pergunta onde criar o HTML. `Ctrl+F2`
 sempre permite escolher outro nome ou diretório.
 
 O menu **Arquivo > Arquivos recentes** mantém até nove documentos. Ao iniciar
-o editor novamente, o último arquivo é reaberto na linha em que estava. O
-programa também memoriza separadamente a última linha visitada em cada arquivo.
+o editor novamente, o último arquivo é reaberto na linha em que estava. Esse
+comportamento pode ser desativado em **Ferramentas > Opções**, na aba **Geral**.
+O programa também memoriza separadamente a última linha visitada em cada arquivo.
 
 ## Markdown aceito
 

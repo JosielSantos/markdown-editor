@@ -20,6 +20,7 @@ type
         ExitEditor: TNotifyEvent;
         GoToLine: TNotifyEvent;
         InsertLink: TNotifyEvent;
+        ShowOptions: TNotifyEvent;
         ShowPreview: TNotifyEvent;
     end;
 
@@ -61,6 +62,7 @@ var
     EditMenu: TMenuItem;
     FileMenu: TMenuItem;
     InsertMenu: TMenuItem;
+    ToolsMenu: TMenuItem;
     ViewMenu: TMenuItem;
 begin
     Result := TMainMenu.Create(Owner);
@@ -85,6 +87,9 @@ begin
 
     ViewMenu := AddTopLevelMenu(Result, '&Visualizar');
     AddMenuItem(ViewMenu, '&Renderizar Markdown', ShortCut(VK_F9, []), Actions.ShowPreview);
+
+    ToolsMenu := AddTopLevelMenu(Result, '&Ferramentas');
+    AddMenuItem(ToolsMenu, '&Opções...', ShortCut(Ord('O'), [ssAlt]), Actions.ShowOptions);
 
 end;
 

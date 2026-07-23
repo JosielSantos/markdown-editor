@@ -14,6 +14,7 @@ uses
     Test_Link_Navigation,
     Test_Line_Navigation,
     Test_Link,
+    Test_Preferences,
     Test_Renderer,
     Test_Recent_Files,
     Test_Session;

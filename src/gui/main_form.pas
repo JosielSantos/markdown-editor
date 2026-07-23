@@ -8,6 +8,7 @@ interface
 uses
     Classes,
     Forms,
+    Preferences,
     Recent_Files_Controller,
     Session_Controller,
     StdCtrls;
@@ -16,6 +17,7 @@ type
     TEditorForm = class(TForm)
     private
         CurrentFileName: string;
+        EditorPreferences: TEditorPreferences;
         EditorMemo: TMemo;
         LastSavedContent: string;
         RecentFiles: TRecentFilesController;
@@ -40,6 +42,7 @@ type
         procedure SaveMarkdown(Sender: TObject);
         procedure SaveMarkdownAs(Sender: TObject);
         procedure ShowErrorMessage(const DialogTitle, ErrorMessage: string);
+        procedure ShowOptions(Sender: TObject);
         procedure ShowPreview(Sender: TObject);
         procedure UpdateWindowTitle;
     public
@@ -70,6 +73,7 @@ uses
     LCLType,
     Link,
     Menus,
+    Options,
     Preview_Form,
     Editor,
     SysUtils;
@@ -105,6 +109,7 @@ begin
     Actions.ExitEditor := @ExitEditor;
     Actions.GoToLine := @GoToLine;
     Actions.InsertLink := @InsertLink;
+    Actions.ShowOptions := @ShowOptions;
     Actions.ShowPreview := @ShowPreview;
     Menu := BuildEditorMenu(Self, Actions, RecentFilesMenu);
     RecentFiles := TRecentFilesController.Create(Self, RecentFilesMenu, @OpenRecentMarkdown, DefaultSettingsFileName);
@@ -117,6 +122,7 @@ begin
     Position := poScreenCenter;
     Width := 900;
     Height := 650;
+    EditorPreferences := LoadEditorPreferences(DefaultSettingsFileName);
     CreateMenuBar;
     CreateEditor;
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);
@@ -313,7 +319,8 @@ end;
 
 procedure TEditorForm.RestoreLastSession;
 begin
-    Session.Restore;
+    if EditorPreferences.LoadLastFile then
+        Session.Restore;
 end;
 
 function TEditorForm.SaveCurrentDocument: Boolean;
@@ -356,6 +363,22 @@ end;
 procedure TEditorForm.ShowErrorMessage(const DialogTitle, ErrorMessage: string);
 begin
     LCLIntf.MessageBox(Handle, PChar(ErrorMessage), PChar(DialogTitle), MB_OK or MB_ICONERROR);
+end;
+
+procedure TEditorForm.ShowOptions(Sender: TObject);
+var
+    UpdatedPreferences: TEditorPreferences;
+begin
+    UpdatedPreferences := EditorPreferences;
+    if not EditEditorPreferences(Self, UpdatedPreferences) then
+        Exit;
+    try
+        SaveEditorPreferences(DefaultSettingsFileName, UpdatedPreferences);
+        EditorPreferences := UpdatedPreferences;
+    except
+        on Error: Exception do
+            ShowErrorMessage('Erro ao salvar opções', Error.Message);
+    end;
 end;
 
 procedure TEditorForm.ShowPreview(Sender: TObject);

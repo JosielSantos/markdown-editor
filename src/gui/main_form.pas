@@ -127,7 +127,7 @@ begin
     EditorPreferences := LoadEditorPreferences(DefaultSettingsFileName);
     CreateMenuBar;
     CreateEditor;
-    LanguageServer := TLanguageServerController.Create(Self, DefaultMarksmanFileName);
+    LanguageServer := TLanguageServerController.Create(Self, DefaultLanguageServerExecutableFileName);
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);
     CurrentFileName := '';
     LastSavedContent := '';

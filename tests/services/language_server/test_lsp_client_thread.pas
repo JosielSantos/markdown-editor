@@ -22,8 +22,9 @@ type
         procedure HandleDiagnostics(Sender: TObject; const DocumentUri: string; const Diagnostics: TLspDiagnosticArray);
         procedure HandleError(Sender: TObject; const ErrorMessage: string);
         procedure HandleReady(Sender: TObject);
+        function SelectFakeLanguageServerResponse(const JsonText: string): string;
     published
-        procedure ReceivesMarksmanDiagnostics;
+        procedure ReceivesDiagnosticsFromFakeLanguageServer;
     end;
 
 implementation
@@ -31,11 +32,11 @@ implementation
 uses
     Classes,
     Lsp_Protocol,
-    SysUtils,
-    URIParser;
+    SysUtils;
 
 const
-    MarkdownLspFileName = 'bin\marksman.exe';
+    FakeDocumentUri = 'file:///fake-document.md';
+    FakeLanguageServerFileName = 'bin\fake_lsp.exe';
     ResponseTimeoutMilliseconds = 5000;
 
 procedure TLspClientThreadTests.HandleDiagnostics(
@@ -59,24 +60,46 @@ begin
     ServerReady := True;
 end;
 
-procedure TLspClientThreadTests.ReceivesMarksmanDiagnostics;
+function TLspClientThreadTests.SelectFakeLanguageServerResponse(const JsonText: string): string;
+var
+    ExpectedResponse: string;
+begin
+    ExpectedResponse := '';
+    if (Pos('"method"', JsonText) > 0) and (Pos('"initialize"', JsonText) > 0) then
+        ExpectedResponse := 'responses/initialization/valid_response.json'
+    else if (Pos('"method"', JsonText) > 0) and (Pos('"textDocument/didOpen"', JsonText) > 0) then
+        ExpectedResponse := 'notifications/diagnostics/valid_diagnostics.json';
+    Result := JsonText;
+    if ExpectedResponse <> '' then
+        Insert(',"expected_response_file_name":"' + ExpectedResponse + '"', Result, Length(Result));
+end;
+
+procedure TLspClientThreadTests.ReceivesDiagnosticsFromFakeLanguageServer;
 var
     Client: TLspClientThread;
     Deadline: QWord;
     DocumentUri: string;
 begin
-    AssertTrue('Markdown LSP não encontrado', FileExists(MarkdownLspFileName));
+    AssertTrue('Fake Markdown LSP não encontrado', FileExists(FakeLanguageServerFileName));
     DiagnosticsReceived := False;
     SetLength(ReceivedDiagnostics, 0);
     ReceivedDocumentUri := '';
     ServerReady := False;
     ServerError := '';
-    DocumentUri := FilenameToURI(ExpandFileName('teste-lsp-temporario.md'));
-    Client := TLspClientThread.Create(MarkdownLspFileName, '', @HandleDiagnostics, @HandleError, @HandleReady);
+    DocumentUri := FakeDocumentUri;
+    Client :=
+        TLspClientThread.Create(
+            FakeLanguageServerFileName,
+            '',
+            @HandleDiagnostics,
+            @HandleError,
+            @HandleReady,
+            @SelectFakeLanguageServerResponse
+        );
     try
         Client.OpenDocument(
             DocumentUri,
-            '# Teste' + LineEnding + LineEnding + '[[#ausente]]' + LineEnding + '##' + #$C2#$A0 + 'Aviso'
+            '# Teste' + LineEnding + LineEnding + 'Conteúdo simulado' + LineEnding + 'Aviso simulado'
         );
         Deadline := GetTickCount64 + ResponseTimeoutMilliseconds;
         while not DiagnosticsReceived and (ServerError = '') and (GetTickCount64 < Deadline) do
@@ -85,10 +108,10 @@ begin
             Sleep(10);
         end;
         AssertEquals('erro inesperado do Markdown LSP', '', ServerError);
-        AssertTrue('o Markdown LSP não concluiu a inicialização', ServerReady);
-        AssertTrue('o Markdown LSP não publicou diagnósticos', DiagnosticsReceived);
-        AssertTrue('URI devolvida pelo Markdown LSP', DocumentUrisMatch(DocumentUri, ReceivedDocumentUri));
-        AssertTrue('o Markdown LSP não identificou a âncora inválida', Length(ReceivedDiagnostics) > 0);
+        AssertTrue('o fake Markdown LSP não concluiu a inicialização', ServerReady);
+        AssertTrue('o fake Markdown LSP não publicou diagnósticos', DiagnosticsReceived);
+        AssertTrue('URI devolvida pelo fake Markdown LSP', DocumentUrisMatch(DocumentUri, ReceivedDocumentUri));
+        AssertEquals('quantidade de diagnósticos simulados', 2, Length(ReceivedDiagnostics));
         AssertEquals(Ord(ldsError), Ord(HighestSeverityAtLine(ReceivedDiagnostics, 3)));
         AssertEquals(Ord(ldsWarning), Ord(HighestSeverityAtLine(ReceivedDiagnostics, 4)));
     finally

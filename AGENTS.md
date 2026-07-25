@@ -22,7 +22,6 @@ Initialize dependencies after cloning:
 
 ```powershell
 git submodule update --init
-.\scripts\setup-marksman.ps1
 .\scripts\build.ps1 -Mode Debug
 .\scripts\format.ps1 -PasfmtPath .\pasfmt.exe
 .\scripts\test.ps1
@@ -31,11 +30,13 @@ git submodule update --init
 .\scripts\package-release.ps1 -Version 0.3.0
 ```
 
-The setup script downloads `marksman.exe` to `bin/`. The build script registers
-Lazarus packages and copies `WebView2Loader.dll` to `bin/`. The format script
-runs pasfmt only on project-owned Pascal sources;
-use `-Check` to verify formatting without writes. The test script builds the
-application, compiles the FPCUnit suite, and runs its console runner. Launch locally with
+The build script registers Lazarus packages and copies `WebView2Loader.dll` to
+`bin/`. The format script runs pasfmt only on project-owned Pascal sources; use
+`-Check` to verify formatting without writes. The test script builds the
+application, compiles the fake language server when necessary and the FPCUnit
+suite, and runs its console runner without requiring an external language
+server. For optional manual integration testing, `setup-marksman.ps1` downloads
+`marksman.exe` to `bin/`. Launch locally with
 `.\bin\markdown-editor.exe .\example.md`. Development requires FPC 3.2.2+,
 Lazarus 4.8+ with Win32 LCL, and the Microsoft Edge WebView2 Runtime. Build the
 installer only after a Release build; its output belongs in `dist/`.

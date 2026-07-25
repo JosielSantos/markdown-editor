@@ -15,6 +15,7 @@ type
     TLspDiagnosticsEvent =
         procedure(Sender: TObject; const DocumentUri: string; const Diagnostics: TLspDiagnosticArray) of object;
     TLspErrorEvent = procedure(Sender: TObject; const ErrorMessage: string) of object;
+    TLspOutgoingMessageTransform = function(const JsonText: string): string of object;
 
     TLspClientThread = class(TThread)
     private
@@ -29,6 +30,7 @@ type
         ServerExecutableFileName: string;
         OnDiagnostics: TLspDiagnosticsEvent;
         OnError: TLspErrorEvent;
+        OutgoingMessageTransform: TLspOutgoingMessageTransform;
         OnReady: TNotifyEvent;
         OutgoingMessages: TStringList;
         PendingDiagnostics: TLspDiagnosticArray;
@@ -56,7 +58,8 @@ type
             const TheServerExecutableFileName, TheServerArguments: string;
             TheDiagnosticsHandler: TLspDiagnosticsEvent;
             TheErrorHandler: TLspErrorEvent;
-            TheReadyHandler: TNotifyEvent = nil
+            TheReadyHandler: TNotifyEvent = nil;
+            TheOutgoingMessageTransform: TLspOutgoingMessageTransform = nil
         );
         destructor Destroy; override;
         procedure ChangeDocument(const Text: string);
@@ -80,7 +83,8 @@ constructor TLspClientThread.Create(
     const TheServerExecutableFileName, TheServerArguments: string;
     TheDiagnosticsHandler: TLspDiagnosticsEvent;
     TheErrorHandler: TLspErrorEvent;
-    TheReadyHandler: TNotifyEvent
+    TheReadyHandler: TNotifyEvent;
+    TheOutgoingMessageTransform: TLspOutgoingMessageTransform
 );
 begin
     inherited Create(True);
@@ -89,6 +93,7 @@ begin
     OnDiagnostics := TheDiagnosticsHandler;
     OnError := TheErrorHandler;
     OnReady := TheReadyHandler;
+    OutgoingMessageTransform := TheOutgoingMessageTransform;
     OutgoingMessages := TStringList.Create;
     InitCriticalSection(Lock);
     Start;
@@ -113,8 +118,13 @@ begin
 end;
 
 procedure TLspClientThread.QueueJsonLocked(const JsonText: string);
+var
+    OutgoingJsonText: string;
 begin
-    OutgoingMessages.Add(string(FrameLspMessage(JsonText)));
+    OutgoingJsonText := JsonText;
+    if Assigned(OutgoingMessageTransform) then
+        OutgoingJsonText := OutgoingMessageTransform(OutgoingJsonText);
+    OutgoingMessages.Add(string(FrameLspMessage(OutgoingJsonText)));
 end;
 
 function TLspClientThread.TakeOutgoingMessage(out Message: RawByteString): Boolean;

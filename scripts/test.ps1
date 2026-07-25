@@ -8,7 +8,12 @@ $unitOutput = Join-Path $projectRoot 'lib\tests'
 $binaryOutput = Join-Path $projectRoot 'bin'
 $sourceRoot = Join-Path $projectRoot 'src'
 $testRoot = Join-Path $projectRoot 'tests'
-$marksman = Join-Path $binaryOutput 'marksman.exe'
+$fakeLanguageServerSource = Join-Path $testRoot 'fixtures\fake_lsp\fake_lsp.pas'
+$fakeLanguageServer = Join-Path $binaryOutput 'fake_lsp.exe'
+$fakeLanguageServerDependencies = @(
+    $fakeLanguageServerSource
+    (Join-Path $sourceRoot 'services\language_server\lsp_protocol.pas')
+)
 $sourceUnitArguments = @("-Fu$sourceRoot") + @(
     Get-ChildItem $sourceRoot -Directory -Recurse |
         ForEach-Object { "-Fu$($_.FullName)" }
@@ -21,10 +26,6 @@ $testUnitArguments = @("-Fu$testRoot") + @(
 & (Join-Path $PSScriptRoot 'build.ps1') -Mode Debug
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
-}
-
-if (-not (Test-Path -LiteralPath $marksman)) {
-    & (Join-Path $PSScriptRoot 'setup-marksman.ps1') -Destination $marksman
 }
 
 $markdownUnit = Get-ChildItem `
@@ -53,6 +54,23 @@ $lazUtilsUnits = $lazUtilsUnit.DirectoryName
 $testUnitArguments += ('-Fu' + $lazUtilsUnits)
 
 New-Item -ItemType Directory -Force $unitOutput, $binaryOutput | Out-Null
+$compileFakeLanguageServer = -not (Test-Path $fakeLanguageServer)
+if (-not $compileFakeLanguageServer) {
+    $fakeLanguageServerTimestamp = (Get-Item $fakeLanguageServer).LastWriteTimeUtc
+    $compileFakeLanguageServer = $null -ne (
+        $fakeLanguageServerDependencies |
+            Where-Object { (Get-Item $_).LastWriteTimeUtc -gt $fakeLanguageServerTimestamp } |
+            Select-Object -First 1
+    )
+}
+if ($compileFakeLanguageServer) {
+    & $fpc '-l-' '-v0' '-ve' '-Mobjfpc' '-Sh' $sourceUnitArguments `
+        $testUnitArguments "-FU$unitOutput" "-FE$binaryOutput" $fakeLanguageServerSource
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+}
+
 $testRunnerSource = Join-Path $projectRoot 'tests\test_runner.pas'
 & $fpc '-l-' '-v0' '-ve' '-Mobjfpc' '-Sh' $sourceUnitArguments `
     $testUnitArguments "-Fu$markdownUnits" "-Fu$argumentParserUnits" `

@@ -129,11 +129,10 @@ Para compilar a aplicação e executar os testes:
 .\scripts\test.ps1
 ```
 
-Depois de compilar a aplicação com sucesso, `test.ps1` instala em
-`bin\marksman.exe` a versão do servidor usada pelo teste de integração, somente
-quando ela ainda não está disponível. O download tem seu hash SHA-256
-verificado. Para preparar esse servidor antecipadamente, execute
-`.\scripts\setup-marksman.ps1`.
+Depois de compilar a aplicação com sucesso, `test.ps1` compila, quando
+necessário, `tests\fixtures\fake_lsp\fake_lsp.pas` como `bin\fake_lsp.exe` e o
+usa nos testes de integração. A suíte não baixa nem exige um servidor de
+linguagem externo.
 
 As orientações para contribuir estão em [AGENTS.md](AGENTS.md). Licenças e
 avisos das bibliotecas utilizadas estão em

@@ -41,6 +41,15 @@ begin
     end;
 end;
 
+procedure WriteFileContent(OutputStream: TStream; const RelativeFileName: string);
+var
+    Content: RawByteString;
+begin
+    Content := RawByteString(ReadServerMessage(RelativeFileName));
+    if Length(Content) > 0 then
+        OutputStream.WriteBuffer(Content[1], Length(Content));
+end;
+
 procedure WriteServerMessage(OutputStream: TStream; const RelativeFileName: string);
 var
     Message: RawByteString;
@@ -66,46 +75,66 @@ begin
     Result := True;
 end;
 
-function ExpectedResponseFileName(const JsonText: string): string;
+function JsonStringField(Message: TJSONData; const FieldName: string): string;
 var
-    ExpectedResponse: TJSONData;
-    Message: TJSONData;
+    Value: TJSONData;
 begin
     Result := '';
+    Value := Message.FindPath(FieldName);
+    if Assigned(Value) and (Value.JSONType = jtString) then
+        Result := Value.AsString;
+end;
+
+function JsonIntegerField(Message: TJSONData; const FieldName: string; out Value: Integer): Boolean;
+var
+    JsonValue: TJSONData;
+begin
+    JsonValue := Message.FindPath(FieldName);
+    Result := Assigned(JsonValue) and (JsonValue.JSONType = jtNumber);
+    if Result then
+        Value := JsonValue.AsInteger;
+end;
+
+procedure HandleMessage(OutputStream, ErrorStream: TStream; const JsonText: string);
+var
+    ErrorFileName: string;
+    ExitCode: Integer;
+    Message: TJSONData;
+    ResponseFileName: string;
+begin
     Message := GetJSON(JsonText);
     try
-        ExpectedResponse := Message.FindPath('expected_response_file_name');
-        if Assigned(ExpectedResponse) and (ExpectedResponse.JSONType = jtString) then
-            Result := ExpectedResponse.AsString;
+        ErrorFileName := JsonStringField(Message, 'expected_standard_error_file_name');
+        if ErrorFileName <> '' then
+            WriteFileContent(ErrorStream, ErrorFileName);
+        if JsonIntegerField(Message, 'expected_exit_code', ExitCode) then
+            Halt(ExitCode);
+        ResponseFileName := JsonStringField(Message, 'expected_response_file_name');
+        if ResponseFileName <> '' then
+            WriteServerMessage(OutputStream, ResponseFileName);
     finally
         Message.Free;
     end;
 end;
 
-procedure HandleMessage(OutputStream: TStream; const JsonText: string);
 var
-    RelativeFileName: string;
-begin
-    RelativeFileName := ExpectedResponseFileName(JsonText);
-    if RelativeFileName <> '' then
-        WriteServerMessage(OutputStream, RelativeFileName);
-end;
-
-var
+    ErrorStream: THandleStream;
     InputStream: THandleStream;
     JsonText: string;
     MessageBuffer: TLspMessageBuffer;
     OutputStream: THandleStream;
 begin
+    ErrorStream := THandleStream.Create(TTextRec(StdErr).Handle);
     InputStream := THandleStream.Create(TTextRec(Input).Handle);
     OutputStream := THandleStream.Create(TTextRec(Output).Handle);
     MessageBuffer := TLspMessageBuffer.Create;
     try
         while ReadMessage(InputStream, MessageBuffer, JsonText) do
-            HandleMessage(OutputStream, JsonText);
+            HandleMessage(OutputStream, ErrorStream, JsonText);
     finally
         MessageBuffer.Free;
         OutputStream.Free;
         InputStream.Free;
+        ErrorStream.Free;
     end;
 end.

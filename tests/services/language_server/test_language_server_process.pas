@@ -12,7 +12,9 @@ uses
 type
     TLanguageServerProcessTests = class(TTestCase)
     published
+        procedure BuildsUnexpectedExitMessage;
         procedure ConfiguresOptionalArguments;
+        procedure KeepsTailOfLongErrorOutput;
         procedure LeavesArgumentsEmptyByDefault;
     end;
 
@@ -20,7 +22,25 @@ implementation
 
 uses
     Language_Server_Process,
-    Process;
+    Process,
+    SysUtils;
+
+procedure TLanguageServerProcessTests.BuildsUnexpectedExitMessage;
+begin
+    AssertEquals(
+        'O servidor de linguagem foi encerrado inesperadamente (código de saída: 23).'
+            + LineEnding
+            + LineEnding
+            + 'Detalhes do servidor:'
+            + LineEnding
+            + 'Parâmetro inválido.',
+        BuildLanguageServerProcessExitMessage(23, 'Parâmetro inválido.' + LineEnding, False)
+    );
+    AssertEquals(
+        'O servidor de linguagem foi encerrado inesperadamente (código de saída: 0).',
+        BuildLanguageServerProcessExitMessage(0, '', False)
+    );
+end;
 
 procedure TLanguageServerProcessTests.ConfiguresOptionalArguments;
 const
@@ -44,6 +64,26 @@ begin
     finally
         ServerProcess.Free;
     end;
+end;
+
+procedure TLanguageServerProcessTests.KeepsTailOfLongErrorOutput;
+var
+    ErrorOutput: RawByteString;
+    WasTruncated: Boolean;
+begin
+    ErrorOutput := '';
+    WasTruncated := False;
+    AppendLanguageServerErrorOutput(
+        ErrorOutput,
+        RawByteString(StringOfChar('x', MaximumLanguageServerErrorOutputBytes) + 'final'),
+        WasTruncated
+    );
+    AssertTrue(WasTruncated);
+    AssertEquals(MaximumLanguageServerErrorOutputBytes, Length(ErrorOutput));
+    AssertEquals('final', Copy(string(ErrorOutput), Length(ErrorOutput) - 4, 5));
+    AssertTrue(
+        Pos('[início da saída omitido]', BuildLanguageServerProcessExitMessage(1, ErrorOutput, WasTruncated)) > 0
+    );
 end;
 
 procedure TLanguageServerProcessTests.LeavesArgumentsEmptyByDefault;

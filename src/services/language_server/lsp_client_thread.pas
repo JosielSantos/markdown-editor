@@ -23,6 +23,8 @@ type
         CurrentDocumentUri: string;
         CurrentDocumentVersion: Integer;
         DiagnosticsDeliveryQueued: Boolean;
+        ErrorOutput: RawByteString;
+        ErrorOutputTruncated: Boolean;
         ErrorDeliveryQueued: Boolean;
         Initialized: Boolean;
         Lock: TRTLCriticalSection;
@@ -41,7 +43,7 @@ type
         procedure DeliverDiagnostics;
         procedure DeliverError;
         procedure DeliverReady;
-        procedure DrainErrorOutput;
+        procedure CaptureErrorOutput;
         procedure HandleIncomingMessage(const JsonText: string);
         procedure MarkInitialized;
         procedure QueueJsonLocked(const JsonText: string);
@@ -282,16 +284,21 @@ begin
     end;
 end;
 
-procedure TLspClientThread.DrainErrorOutput;
+procedure TLspClientThread.CaptureErrorOutput;
 var
     AvailableBytes: Integer;
     Chunk: RawByteString;
+    ReadCount: LongInt;
 begin
     AvailableBytes := ServerProcess.Stderr.NumBytesAvailable;
     while AvailableBytes > 0 do
     begin
         SetLength(Chunk, Min(AvailableBytes, PipeReadSize));
-        ServerProcess.Stderr.Read(Chunk[1], Length(Chunk));
+        ReadCount := ServerProcess.Stderr.Read(Chunk[1], Length(Chunk));
+        if ReadCount <= 0 then
+            Exit;
+        SetLength(Chunk, ReadCount);
+        AppendLanguageServerErrorOutput(ErrorOutput, Chunk, ErrorOutputTruncated);
         AvailableBytes := ServerProcess.Stderr.NumBytesAvailable;
     end;
 end;
@@ -308,11 +315,17 @@ begin
         begin
             WriteOutgoingMessages;
             ReadServerOutput;
-            DrainErrorOutput;
+            CaptureErrorOutput;
             Sleep(WorkerPauseMilliseconds);
         end;
         if not Terminated then
-            QueueError('O servidor de linguagem foi encerrado inesperadamente.');
+        begin
+            ReadServerOutput;
+            CaptureErrorOutput;
+            QueueError(
+                BuildLanguageServerProcessExitMessage(ServerProcess.ExitStatus, ErrorOutput, ErrorOutputTruncated)
+            );
+        end;
     except
         on Error: Exception do
             QueueError(Error.Message);

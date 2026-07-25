@@ -15,6 +15,8 @@ type
     TLspClientThreadTests = class(TTestCase)
     private
         DiagnosticsReceived: Boolean;
+        ExpectedProcessExitCode: Integer;
+        ExpectedStandardErrorFileName: string;
         InitializationResponseFileName: string;
         ReceivedDiagnostics: TLspDiagnosticArray;
         ReceivedDocumentUri: string;
@@ -30,6 +32,7 @@ type
         procedure ReceivesDiagnosticsFromFakeLanguageServer;
         procedure RejectsInvalidInitializationResponse;
         procedure ReportsInitializationError;
+        procedure ReportsUnexpectedProcessExitDetails;
     end;
 
 implementation
@@ -68,6 +71,8 @@ end;
 procedure TLspClientThreadTests.ResetState;
 begin
     DiagnosticsReceived := False;
+    ExpectedProcessExitCode := -1;
+    ExpectedStandardErrorFileName := '';
     InitializationResponseFileName := 'responses/initialization/valid_response.json';
     SetLength(ReceivedDiagnostics, 0);
     ReceivedDocumentUri := '';
@@ -80,11 +85,22 @@ var
     ExpectedResponseFileName: string;
 begin
     ExpectedResponseFileName := '';
+    Result := JsonText;
+    if (Pos('"method"', JsonText) > 0) and (Pos('"initialize"', JsonText) > 0) and (ExpectedProcessExitCode >= 0) then
+    begin
+        if ExpectedStandardErrorFileName <> '' then
+            Insert(
+                ',"expected_standard_error_file_name":"' + ExpectedStandardErrorFileName + '"',
+                Result,
+                Length(Result)
+            );
+        Insert(',"expected_exit_code":' + IntToStr(ExpectedProcessExitCode), Result, Length(Result));
+        Exit;
+    end;
     if (Pos('"method"', JsonText) > 0) and (Pos('"initialize"', JsonText) > 0) then
         ExpectedResponseFileName := InitializationResponseFileName
     else if (Pos('"method"', JsonText) > 0) and (Pos('"textDocument/didOpen"', JsonText) > 0) then
         ExpectedResponseFileName := 'notifications/diagnostics/valid_diagnostics.json';
-    Result := JsonText;
     if ExpectedResponseFileName <> '' then
         Insert(',"expected_response_file_name":"' + ExpectedResponseFileName + '"', Result, Length(Result));
 end;
@@ -175,6 +191,46 @@ begin
         'responses/initialization/invalid_response.json',
         'O servidor de linguagem enviou uma resposta de inicialização inválida.'
     );
+end;
+
+procedure TLspClientThreadTests.ReportsUnexpectedProcessExitDetails;
+var
+    Client: TLspClientThread;
+    Deadline: QWord;
+begin
+    AssertTrue('Fake Markdown LSP não encontrado', FileExists(FakeLanguageServerFileName));
+    ResetState;
+    ExpectedProcessExitCode := 23;
+    ExpectedStandardErrorFileName := 'stderr/invalid_argument.txt';
+    Client :=
+        TLspClientThread.Create(
+            FakeLanguageServerFileName,
+            '',
+            @HandleDiagnostics,
+            @HandleError,
+            @HandleReady,
+            @SelectFakeLanguageServerResponse
+        );
+    try
+        Deadline := GetTickCount64 + ResponseTimeoutMilliseconds;
+        while (ServerError = '') and (GetTickCount64 < Deadline) do
+        begin
+            CheckSynchronize(20);
+            Sleep(10);
+        end;
+        AssertFalse('o fake Markdown LSP não deveria ficar pronto', ServerReady);
+        AssertEquals(
+            'O servidor de linguagem foi encerrado inesperadamente (código de saída: 23).'
+                + LineEnding
+                + LineEnding
+                + 'Detalhes do servidor:'
+                + LineEnding
+                + 'Parâmetro --config inválido.',
+            ServerError
+        );
+    finally
+        Client.Free;
+    end;
 end;
 
 initialization

@@ -72,6 +72,7 @@ uses
     LCLIntf,
     LCLType,
     Link,
+    Markdown_Memo,
     Markdown_Save_Dialog,
     Menus,
     Options,
@@ -81,7 +82,7 @@ uses
 
 procedure TEditorForm.CreateEditor;
 begin
-    EditorMemo := TMemo.Create(Self);
+    EditorMemo := TMarkdownMemo.Create(Self);
     EditorMemo.Parent := Self;
     EditorMemo.Align := alClient;
     EditorMemo.ScrollBars := ssAutoBoth;

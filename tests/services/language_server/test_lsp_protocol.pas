@@ -13,9 +13,13 @@ type
     TLspProtocolTests = class(TTestCase)
     published
         procedure BuildsDidOpenNotification;
+        procedure IgnoresMessagesUnrelatedToInitialize;
         procedure MatchesEquivalentWindowsUris;
+        procedure ParsesInitializeErrorResponse;
+        procedure ParsesSuccessfulInitializeResponse;
         procedure ReadsFragmentedUtf8Message;
         procedure ReadsMultipleMessages;
+        procedure RejectsInvalidInitializeResponse;
     end;
 
 implementation
@@ -84,6 +88,74 @@ procedure TLspProtocolTests.MatchesEquivalentWindowsUris;
 begin
     AssertTrue(DocumentUrisMatch('file:///D:/livro/capitulo.md', 'file:///d%3A/livro/capitulo.md'));
     AssertFalse(DocumentUrisMatch('file:///D:/livro/um.md', 'file:///D:/livro/dois.md'));
+end;
+
+procedure TLspProtocolTests.ParsesSuccessfulInitializeResponse;
+var
+    ErrorMessage: string;
+    Status: TLspInitializeResponseStatus;
+begin
+    Status :=
+        ParseInitializeResponse(
+            '{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"textDocumentSync":1}}}',
+            ErrorMessage
+        );
+    AssertEquals(Ord(lirsSuccess), Ord(Status));
+    AssertEquals('', ErrorMessage);
+end;
+
+procedure TLspProtocolTests.ParsesInitializeErrorResponse;
+var
+    ErrorMessage: string;
+    Status: TLspInitializeResponseStatus;
+begin
+    Status :=
+        ParseInitializeResponse(
+            '{"jsonrpc":"2.0","id":1,"error":{"code":-32002,"message":"Falha simulada"}}',
+            ErrorMessage
+        );
+    AssertEquals(Ord(lirsError), Ord(Status));
+    AssertEquals('O servidor de linguagem recusou a inicialização (-32002): Falha simulada', ErrorMessage);
+end;
+
+procedure TLspProtocolTests.RejectsInvalidInitializeResponse;
+var
+    ErrorMessage: string;
+    Status: TLspInitializeResponseStatus;
+begin
+    Status := ParseInitializeResponse('{"jsonrpc":"2.0","id":1}', ErrorMessage);
+    AssertEquals(Ord(lirsError), Ord(Status));
+    AssertEquals('O servidor de linguagem enviou uma resposta de inicialização inválida.', ErrorMessage);
+
+    Status := ParseInitializeResponse('{"jsonrpc":"2.0","id":1,"result":null}', ErrorMessage);
+    AssertEquals(Ord(lirsError), Ord(Status));
+    AssertEquals('O servidor de linguagem enviou uma resposta de inicialização inválida.', ErrorMessage);
+end;
+
+procedure TLspProtocolTests.IgnoresMessagesUnrelatedToInitialize;
+var
+    ErrorMessage: string;
+begin
+    AssertEquals(
+        Ord(lirsNotInitializeResponse),
+        Ord(ParseInitializeResponse('{"jsonrpc":"2.0","id":2,"result":{}}', ErrorMessage))
+    );
+    AssertEquals('', ErrorMessage);
+    AssertEquals(
+        Ord(lirsNotInitializeResponse),
+        Ord(
+            ParseInitializeResponse(
+                '{"jsonrpc":"2.0","id":1,"method":"workspace/configuration","params":{}}',
+                ErrorMessage
+            )
+        )
+    );
+    AssertEquals('', ErrorMessage);
+    AssertEquals(
+        Ord(lirsNotInitializeResponse),
+        Ord(ParseInitializeResponse('{"jsonrpc":"2.0","id":"1","result":{}}', ErrorMessage))
+    );
+    AssertEquals('', ErrorMessage);
 end;
 
 initialization

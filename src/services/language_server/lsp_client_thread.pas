@@ -240,9 +240,22 @@ procedure TLspClientThread.HandleIncomingMessage(const JsonText: string);
 var
     Diagnostics: TLspDiagnosticArray;
     DocumentUri: string;
+    InitializationError: string;
+    InitializationStatus: TLspInitializeResponseStatus;
 begin
-    if IsInitializeResponse(JsonText) then
-        MarkInitialized;
+    if not Initialized then
+    begin
+        InitializationStatus := ParseInitializeResponse(JsonText, InitializationError);
+        case InitializationStatus of
+            lirsSuccess: MarkInitialized;
+            lirsError:
+            begin
+                QueueError(InitializationError);
+                Terminate;
+                Exit;
+            end;
+        end;
+    end;
     if ParsePublishDiagnostics(JsonText, DocumentUri, Diagnostics) then
         QueueDiagnostics(DocumentUri, Diagnostics);
 end;
@@ -263,7 +276,7 @@ begin
             Exit;
         SetLength(Chunk, ReadCount);
         MessageBuffer.Append(Chunk);
-        while MessageBuffer.TryReadMessage(JsonText) do
+        while not Terminated and MessageBuffer.TryReadMessage(JsonText) do
             HandleIncomingMessage(JsonText);
         AvailableBytes := ServerProcess.Output.NumBytesAvailable;
     end;

@@ -12,6 +12,8 @@ uses
 type
     ELspProtocolError = class(Exception);
 
+    TLspInitializeResponseStatus = (lirsNotInitializeResponse, lirsSuccess, lirsError);
+
     TLspMessageBuffer = class
     private
         Buffer: RawByteString;
@@ -29,7 +31,7 @@ function BuildDidChangeNotification(const Uri, Text: string; Version: Integer): 
 function BuildDidSaveNotification(const Uri: string): string;
 function BuildDidCloseNotification(const Uri: string): string;
 function DocumentUrisMatch(const FirstUri, SecondUri: string): Boolean;
-function IsInitializeResponse(const JsonText: string): Boolean;
+function ParseInitializeResponse(const JsonText: string; out ErrorMessage: string): TLspInitializeResponseStatus;
 
 implementation
 
@@ -42,6 +44,7 @@ uses
 const
     HeaderSeparator = #13#10#13#10;
     InitializeRequestId = 1;
+    InvalidInitializeResponseMessage = 'O servidor de linguagem enviou uma resposta de inicialização inválida.';
 
 function JsonRpcNotification(const MethodName: string; Parameters: TJSONObject): string;
 var
@@ -221,20 +224,80 @@ begin
     Result := SameFileName(ExpandFileName(FirstFileName), ExpandFileName(SecondFileName));
 end;
 
-function IsInitializeResponse(const JsonText: string): Boolean;
+function ParseInitializeResponse(const JsonText: string; out ErrorMessage: string): TLspInitializeResponseStatus;
 var
+    ErrorCode: TJSONData;
+    ErrorObject: TJSONObject;
+    ErrorValue: TJSONData;
     IdValue: TJSONData;
     JsonData: TJSONData;
+    JsonRpcValue: TJSONData;
     MessageObject: TJSONObject;
+    MessageValue: TJSONData;
+    ResultValue: TJSONData;
 begin
-    Result := False;
+    Result := lirsNotInitializeResponse;
+    ErrorMessage := '';
     JsonData := GetJSON(JsonText);
     try
         if JsonData.JSONType <> jtObject then
             Exit;
         MessageObject := TJSONObject(JsonData);
         IdValue := MessageObject.Find('id');
-        Result := Assigned(IdValue) and (IdValue.AsInteger = InitializeRequestId);
+        if not Assigned(IdValue)
+            or (IdValue.JSONType <> jtNumber)
+            or (IdValue.AsInteger <> InitializeRequestId)
+            or Assigned(MessageObject.Find('method')) then
+            Exit;
+
+        Result := lirsError;
+        JsonRpcValue := MessageObject.Find('jsonrpc');
+        if not Assigned(JsonRpcValue) or (JsonRpcValue.JSONType <> jtString) or (JsonRpcValue.AsString <> '2.0') then
+        begin
+            ErrorMessage := InvalidInitializeResponseMessage;
+            Exit;
+        end;
+
+        ErrorValue := MessageObject.Find('error');
+        ResultValue := MessageObject.Find('result');
+        if Assigned(ErrorValue) = Assigned(ResultValue) then
+        begin
+            ErrorMessage := InvalidInitializeResponseMessage;
+            Exit;
+        end;
+
+        if Assigned(ErrorValue) then
+        begin
+            if ErrorValue.JSONType <> jtObject then
+            begin
+                ErrorMessage := InvalidInitializeResponseMessage;
+                Exit;
+            end;
+            ErrorObject := TJSONObject(ErrorValue);
+            ErrorCode := ErrorObject.Find('code');
+            MessageValue := ErrorObject.Find('message');
+            if not Assigned(ErrorCode)
+                or (ErrorCode.JSONType <> jtNumber)
+                or not Assigned(MessageValue)
+                or (MessageValue.JSONType <> jtString) then
+            begin
+                ErrorMessage := InvalidInitializeResponseMessage;
+                Exit;
+            end;
+            ErrorMessage :=
+                Format(
+                    'O servidor de linguagem recusou a inicialização (%d): %s',
+                    [ErrorCode.AsInteger, MessageValue.AsString]
+                );
+            Exit;
+        end;
+
+        if ResultValue.JSONType <> jtObject then
+        begin
+            ErrorMessage := InvalidInitializeResponseMessage;
+            Exit;
+        end;
+        Result := lirsSuccess;
     finally
         JsonData.Free;
     end;

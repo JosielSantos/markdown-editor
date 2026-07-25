@@ -5,6 +5,7 @@ program TestRunner;
 
 uses
     SimpleTestRunner,
+    Test_Clipboard_Text,
     Test_Command_Line,
     Test_Document_State,
     Test_File_Association,

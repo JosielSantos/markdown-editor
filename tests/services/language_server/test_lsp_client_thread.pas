@@ -15,13 +15,16 @@ type
     TLspClientThreadTests = class(TTestCase)
     private
         DiagnosticsReceived: Boolean;
+        ExitNotificationSent: Boolean;
         ExpectedProcessExitCode: Integer;
         ExpectedStandardErrorFileName: string;
         InitializationResponseFileName: string;
+        RespondToShutdown: Boolean;
         ReceivedDiagnostics: TLspDiagnosticArray;
         ReceivedDocumentUri: string;
         ServerReady: Boolean;
         ServerError: string;
+        ShutdownRequestSent: Boolean;
         procedure AssertInitializationFails(const ResponseFileName, ExpectedError: string);
         procedure HandleDiagnostics(Sender: TObject; const DocumentUri: string; const Diagnostics: TLspDiagnosticArray);
         procedure HandleError(Sender: TObject; const ErrorMessage: string);
@@ -33,6 +36,8 @@ type
         procedure RejectsInvalidInitializationResponse;
         procedure ReportsInitializationError;
         procedure ReportsUnexpectedProcessExitDetails;
+        procedure ShutsDownLanguageServerGracefully;
+        procedure ForcesShutdownAfterTimeout;
     end;
 
 implementation
@@ -71,13 +76,16 @@ end;
 procedure TLspClientThreadTests.ResetState;
 begin
     DiagnosticsReceived := False;
+    ExitNotificationSent := False;
     ExpectedProcessExitCode := -1;
     ExpectedStandardErrorFileName := '';
     InitializationResponseFileName := 'responses/initialization/valid_response.json';
+    RespondToShutdown := True;
     SetLength(ReceivedDiagnostics, 0);
     ReceivedDocumentUri := '';
     ServerReady := False;
     ServerError := '';
+    ShutdownRequestSent := False;
 end;
 
 function TLspClientThreadTests.SelectFakeLanguageServerResponse(const JsonText: string): string;
@@ -100,7 +108,18 @@ begin
     if (Pos('"method"', JsonText) > 0) and (Pos('"initialize"', JsonText) > 0) then
         ExpectedResponseFileName := InitializationResponseFileName
     else if (Pos('"method"', JsonText) > 0) and (Pos('"textDocument/didOpen"', JsonText) > 0) then
-        ExpectedResponseFileName := 'notifications/diagnostics/valid_diagnostics.json';
+        ExpectedResponseFileName := 'notifications/diagnostics/valid_diagnostics.json'
+    else if (Pos('"method"', JsonText) > 0) and (Pos('"shutdown"', JsonText) > 0) then
+    begin
+        ShutdownRequestSent := True;
+        if RespondToShutdown then
+            ExpectedResponseFileName := 'responses/shutdown/valid_response.json';
+    end
+    else if (Pos('"method"', JsonText) > 0) and (Pos('"exit"', JsonText) > 0) then
+    begin
+        ExitNotificationSent := True;
+        Insert(',"expected_exit_code":0', Result, Length(Result));
+    end;
     if ExpectedResponseFileName <> '' then
         Insert(',"expected_response_file_name":"' + ExpectedResponseFileName + '"', Result, Length(Result));
 end;
@@ -228,6 +247,75 @@ begin
                 + 'Parâmetro --config inválido.',
             ServerError
         );
+    finally
+        Client.Free;
+    end;
+end;
+
+procedure TLspClientThreadTests.ShutsDownLanguageServerGracefully;
+var
+    Client: TLspClientThread;
+    Deadline: QWord;
+begin
+    AssertTrue('Fake Markdown LSP não encontrado', FileExists(FakeLanguageServerFileName));
+    ResetState;
+    Client :=
+        TLspClientThread.Create(
+            FakeLanguageServerFileName,
+            '',
+            @HandleDiagnostics,
+            @HandleError,
+            @HandleReady,
+            @SelectFakeLanguageServerResponse
+        );
+    try
+        Deadline := GetTickCount64 + ResponseTimeoutMilliseconds;
+        while not ServerReady and (ServerError = '') and (GetTickCount64 < Deadline) do
+        begin
+            CheckSynchronize(20);
+            Sleep(10);
+        end;
+        AssertTrue('o fake Markdown LSP não concluiu a inicialização', ServerReady);
+        Client.Free;
+        Client := nil;
+        AssertTrue('o cliente não enviou shutdown', ShutdownRequestSent);
+        AssertTrue('o cliente não enviou exit após a resposta de shutdown', ExitNotificationSent);
+        AssertEquals('erro inesperado durante o encerramento', '', ServerError);
+    finally
+        Client.Free;
+    end;
+end;
+
+procedure TLspClientThreadTests.ForcesShutdownAfterTimeout;
+var
+    Client: TLspClientThread;
+    Deadline: QWord;
+begin
+    AssertTrue('Fake Markdown LSP não encontrado', FileExists(FakeLanguageServerFileName));
+    ResetState;
+    RespondToShutdown := False;
+    Client :=
+        TLspClientThread.Create(
+            FakeLanguageServerFileName,
+            '',
+            @HandleDiagnostics,
+            @HandleError,
+            @HandleReady,
+            @SelectFakeLanguageServerResponse
+        );
+    try
+        Deadline := GetTickCount64 + ResponseTimeoutMilliseconds;
+        while not ServerReady and (ServerError = '') and (GetTickCount64 < Deadline) do
+        begin
+            CheckSynchronize(20);
+            Sleep(10);
+        end;
+        AssertTrue('o fake Markdown LSP não concluiu a inicialização', ServerReady);
+        Client.Free;
+        Client := nil;
+        AssertTrue('o cliente não tentou shutdown antes do fallback', ShutdownRequestSent);
+        AssertFalse('o cliente enviou exit sem resposta de shutdown', ExitNotificationSent);
+        AssertEquals('erro inesperado durante o fallback', '', ServerError);
     finally
         Client.Free;
     end;

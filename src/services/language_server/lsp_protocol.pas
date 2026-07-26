@@ -26,12 +26,15 @@ type
 function FrameLspMessage(const JsonText: string): RawByteString;
 function BuildInitializeRequest(ProcessId: Integer; const RootUri: string): string;
 function BuildInitializedNotification: string;
+function BuildShutdownRequest: string;
+function BuildExitNotification: string;
 function BuildDidOpenNotification(const Uri, Text: string; Version: Integer): string;
 function BuildDidChangeNotification(const Uri, Text: string; Version: Integer): string;
 function BuildDidSaveNotification(const Uri: string): string;
 function BuildDidCloseNotification(const Uri: string): string;
 function DocumentUrisMatch(const FirstUri, SecondUri: string): Boolean;
 function ParseInitializeResponse(const JsonText: string; out ErrorMessage: string): TLspInitializeResponseStatus;
+function IsShutdownResponse(const JsonText: string): Boolean;
 
 implementation
 
@@ -44,6 +47,7 @@ uses
 const
     HeaderSeparator = #13#10#13#10;
     InitializeRequestId = 1;
+    ShutdownRequestId = 2;
     InvalidInitializeResponseMessage = 'O servidor de linguagem enviou uma resposta de inicialização inválida.';
 
 function JsonRpcNotification(const MethodName: string; Parameters: TJSONObject): string;
@@ -159,6 +163,35 @@ end;
 function BuildInitializedNotification: string;
 begin
     Result := JsonRpcNotification('initialized', TJSONObject.Create);
+end;
+
+function BuildShutdownRequest: string;
+var
+    MessageObject: TJSONObject;
+begin
+    MessageObject := TJSONObject.Create;
+    try
+        MessageObject.Add('jsonrpc', '2.0');
+        MessageObject.Add('id', ShutdownRequestId);
+        MessageObject.Add('method', 'shutdown');
+        Result := MessageObject.AsJSON;
+    finally
+        MessageObject.Free;
+    end;
+end;
+
+function BuildExitNotification: string;
+var
+    MessageObject: TJSONObject;
+begin
+    MessageObject := TJSONObject.Create;
+    try
+        MessageObject.Add('jsonrpc', '2.0');
+        MessageObject.Add('method', 'exit');
+        Result := MessageObject.AsJSON;
+    finally
+        MessageObject.Free;
+    end;
 end;
 
 function BuildDidOpenNotification(const Uri, Text: string; Version: Integer): string;
@@ -298,6 +331,43 @@ begin
             Exit;
         end;
         Result := lirsSuccess;
+    finally
+        JsonData.Free;
+    end;
+end;
+
+function IsShutdownResponse(const JsonText: string): Boolean;
+var
+    ErrorValue: TJSONData;
+    IdValue: TJSONData;
+    JsonData: TJSONData;
+    JsonRpcValue: TJSONData;
+    MessageObject: TJSONObject;
+    ResultValue: TJSONData;
+begin
+    Result := False;
+    JsonData := GetJSON(JsonText);
+    try
+        if JsonData.JSONType <> jtObject then
+            Exit;
+        MessageObject := TJSONObject(JsonData);
+        JsonRpcValue := MessageObject.Find('jsonrpc');
+        IdValue := MessageObject.Find('id');
+        if not Assigned(JsonRpcValue)
+            or (JsonRpcValue.JSONType <> jtString)
+            or (JsonRpcValue.AsString <> '2.0')
+            or not Assigned(IdValue)
+            or (IdValue.JSONType <> jtNumber)
+            or (IdValue.AsInteger <> ShutdownRequestId)
+            or Assigned(MessageObject.Find('method')) then
+            Exit;
+        ErrorValue := MessageObject.Find('error');
+        ResultValue := MessageObject.Find('result');
+        if Assigned(ErrorValue) = Assigned(ResultValue) then
+            Exit;
+        Result :=
+            (Assigned(ResultValue) and (ResultValue.JSONType = jtNull))
+                or (Assigned(ErrorValue) and (ErrorValue.JSONType = jtObject));
     finally
         JsonData.Free;
     end;

@@ -26,6 +26,7 @@ type
         ErrorOutput: RawByteString;
         ErrorOutputTruncated: Boolean;
         ErrorDeliveryQueued: Boolean;
+        ExitNotificationQueued: Boolean;
         Initialized: Boolean;
         Lock: TRTLCriticalSection;
         ServerArguments: string;
@@ -38,12 +39,15 @@ type
         PendingDiagnostics: TLspDiagnosticArray;
         PendingDiagnosticsUri: string;
         PendingErrorMessage: string;
+        ShutdownRequested: Boolean;
+        ShutdownRequestSent: Boolean;
         MessageBuffer: TLspMessageBuffer;
         ServerProcess: TProcess;
         procedure DeliverDiagnostics;
         procedure DeliverError;
         procedure DeliverReady;
         procedure CaptureErrorOutput;
+        procedure BeginGracefulShutdown;
         procedure HandleIncomingMessage(const JsonText: string);
         procedure MarkInitialized;
         procedure QueueJsonLocked(const JsonText: string);
@@ -51,6 +55,8 @@ type
         procedure QueueError(const ErrorMessage: string);
         procedure QueueJson(const JsonText: string);
         procedure ReadServerOutput;
+        function RequestGracefulShutdown: Boolean;
+        function GracefulShutdownRequested: Boolean;
         function TakeOutgoingMessage(out Message: RawByteString): Boolean;
         procedure WriteOutgoingMessages;
     protected
@@ -79,6 +85,7 @@ uses
 
 const
     PipeReadSize = 8192;
+    GracefulShutdownTimeoutMilliseconds = 1000;
     WorkerPauseMilliseconds = 10;
 
 constructor TLspClientThread.Create(
@@ -102,11 +109,56 @@ begin
 end;
 
 destructor TLspClientThread.Destroy;
+var
+    ShutdownDeadline: QWord;
 begin
-    Terminate;
+    if not Finished and RequestGracefulShutdown then
+    begin
+        ShutdownDeadline := GetTickCount64 + GracefulShutdownTimeoutMilliseconds;
+        while not Finished and (GetTickCount64 < ShutdownDeadline) do
+            Sleep(WorkerPauseMilliseconds);
+    end;
+    if not Finished then
+        Terminate;
     inherited Destroy;
     DoneCriticalSection(Lock);
     OutgoingMessages.Free;
+end;
+
+function TLspClientThread.RequestGracefulShutdown: Boolean;
+begin
+    EnterCriticalSection(Lock);
+    try
+        Result := Initialized;
+        if Result then
+            ShutdownRequested := True;
+    finally
+        LeaveCriticalSection(Lock);
+    end;
+end;
+
+function TLspClientThread.GracefulShutdownRequested: Boolean;
+begin
+    EnterCriticalSection(Lock);
+    try
+        Result := ShutdownRequested;
+    finally
+        LeaveCriticalSection(Lock);
+    end;
+end;
+
+procedure TLspClientThread.BeginGracefulShutdown;
+begin
+    EnterCriticalSection(Lock);
+    try
+        if ShutdownRequested and not ShutdownRequestSent then
+        begin
+            ShutdownRequestSent := True;
+            QueueJsonLocked(BuildShutdownRequest);
+        end;
+    finally
+        LeaveCriticalSection(Lock);
+    end;
 end;
 
 procedure TLspClientThread.QueueJson(const JsonText: string);
@@ -245,6 +297,15 @@ var
     InitializationError: string;
     InitializationStatus: TLspInitializeResponseStatus;
 begin
+    if ShutdownRequestSent then
+    begin
+        if not ExitNotificationQueued and IsShutdownResponse(JsonText) then
+        begin
+            ExitNotificationQueued := True;
+            QueueJson(BuildExitNotification);
+        end;
+        Exit;
+    end;
     if not Initialized then
     begin
         InitializationStatus := ParseInitializeResponse(JsonText, InitializationError);
@@ -313,12 +374,13 @@ begin
         QueueJson(BuildInitializeRequest(GetProcessID, ''));
         while not Terminated and ServerProcess.Running do
         begin
+            BeginGracefulShutdown;
             WriteOutgoingMessages;
             ReadServerOutput;
             CaptureErrorOutput;
             Sleep(WorkerPauseMilliseconds);
         end;
-        if not Terminated then
+        if not Terminated and not GracefulShutdownRequested then
         begin
             ReadServerOutput;
             CaptureErrorOutput;
@@ -328,7 +390,8 @@ begin
         end;
     except
         on Error: Exception do
-            QueueError(Error.Message);
+            if not GracefulShutdownRequested then
+                QueueError(Error.Message);
     end;
     if ServerProcess.Running then
         ServerProcess.Terminate(0);

@@ -13,6 +13,7 @@ type
     TLspProtocolTests = class(TTestCase)
     published
         procedure BuildsDidOpenNotification;
+        procedure BuildsShutdownLifecycleMessages;
         procedure IgnoresMessagesUnrelatedToInitialize;
         procedure MatchesEquivalentWindowsUris;
         procedure ParsesInitializeErrorResponse;
@@ -20,6 +21,7 @@ type
         procedure ReadsFragmentedUtf8Message;
         procedure ReadsMultipleMessages;
         procedure RejectsInvalidInitializeResponse;
+        procedure RecognizesShutdownResponse;
     end;
 
 implementation
@@ -79,6 +81,30 @@ begin
         AssertEquals('file:///C:/livro/capitulo.md', JsonData.FindPath('params.textDocument.uri').AsString);
         AssertEquals('# Título', JsonData.FindPath('params.textDocument.text').AsString);
         AssertEquals(3, JsonData.FindPath('params.textDocument.version').AsInteger);
+    finally
+        JsonData.Free;
+    end;
+end;
+
+procedure TLspProtocolTests.BuildsShutdownLifecycleMessages;
+var
+    JsonData: TJSONData;
+begin
+    JsonData := GetJSON(BuildShutdownRequest);
+    try
+        AssertEquals('2.0', TJSONObject(JsonData).Get('jsonrpc', ''));
+        AssertEquals(2, TJSONObject(JsonData).Get('id', 0));
+        AssertEquals('shutdown', TJSONObject(JsonData).Get('method', ''));
+        AssertFalse(Assigned(TJSONObject(JsonData).Find('params')));
+    finally
+        JsonData.Free;
+    end;
+    JsonData := GetJSON(BuildExitNotification);
+    try
+        AssertEquals('2.0', TJSONObject(JsonData).Get('jsonrpc', ''));
+        AssertEquals('exit', TJSONObject(JsonData).Get('method', ''));
+        AssertFalse(Assigned(TJSONObject(JsonData).Find('id')));
+        AssertFalse(Assigned(TJSONObject(JsonData).Find('params')));
     finally
         JsonData.Free;
     end;
@@ -156,6 +182,14 @@ begin
         Ord(ParseInitializeResponse('{"jsonrpc":"2.0","id":"1","result":{}}', ErrorMessage))
     );
     AssertEquals('', ErrorMessage);
+end;
+
+procedure TLspProtocolTests.RecognizesShutdownResponse;
+begin
+    AssertTrue(IsShutdownResponse('{"jsonrpc":"2.0","id":2,"result":null}'));
+    AssertTrue(IsShutdownResponse('{"jsonrpc":"2.0","id":2,"error":{"code":-32603,"message":"Falha"}}'));
+    AssertFalse(IsShutdownResponse('{"jsonrpc":"2.0","id":1,"result":null}'));
+    AssertFalse(IsShutdownResponse('{"jsonrpc":"2.0","id":2,"result":{}}'));
 end;
 
 initialization

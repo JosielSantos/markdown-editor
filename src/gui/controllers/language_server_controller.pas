@@ -9,6 +9,7 @@ uses
     Classes,
     ExtCtrls,
     Forms,
+    Language_Server_State,
     Lsp_Client_Thread,
     Lsp_Diagnostics,
     StdCtrls;
@@ -22,6 +23,7 @@ type
         ChangeDueAt: QWord;
         ChangePending: Boolean;
         Client: TLspClientThread;
+        CurrentState: TLanguageServerState;
         Diagnostics: TLspDiagnosticArray;
         EditorMemo: TMemo;
         LastCaretLine: Integer;
@@ -66,6 +68,7 @@ type
         );
         procedure Stop;
         function UsesConfiguration(const TheServerExecutableFileName, TheServerArguments: string): Boolean;
+        property State: TLanguageServerState read CurrentState;
     end;
 
 function DefaultLanguageServerExecutableFileName: string;
@@ -109,6 +112,7 @@ begin
     LastCaretLine := -1;
     LastSignaledLine := -1;
     NavigateToLineHandler := TheNavigateToLineHandler;
+    CurrentState := lssStopped;
     Timer := TTimer.Create(OwnerForm);
     Timer.Enabled := False;
     Timer.Interval := CaretPollingMilliseconds;
@@ -130,6 +134,7 @@ begin
         Exit;
     ErrorHandler := StartErrorHandler;
     Stop;
+    CurrentState := lssFailed;
     if Assigned(ErrorHandler) then
         ErrorHandler(Self, ErrorMessage)
     else
@@ -143,6 +148,7 @@ var
 begin
     if Sender <> Client then
         Exit;
+    CurrentState := lssReady;
     WaitingForInitialization := False;
     ReadyHandler := StartReadyHandler;
     StartReadyHandler := nil;
@@ -159,6 +165,8 @@ procedure TLanguageServerController.Start(
 begin
     if TheServerExecutableFileName = '' then
     begin
+        if not Assigned(Client) then
+            CurrentState := lssFailed;
         if Assigned(TheErrorHandler) then
             TheErrorHandler(Self, 'O executável do verificador de Markdown não foi configurado.')
         else
@@ -167,6 +175,8 @@ begin
     end;
     if not FileExists(TheServerExecutableFileName) then
     begin
+        if not Assigned(Client) then
+            CurrentState := lssFailed;
         if Assigned(TheErrorHandler) then
             TheErrorHandler(
                 Self,
@@ -186,6 +196,7 @@ begin
         Exit;
     end;
     Stop;
+    CurrentState := lssInitializing;
     ServerExecutableFileName := ExpandFileName(TheServerExecutableFileName);
     ServerArguments := TheServerArguments;
     ServerInitializationDueAt := GetTickCount64 + InitializationTimeoutMilliseconds;
@@ -216,11 +227,12 @@ begin
     StartErrorHandler := nil;
     StartReadyHandler := nil;
     WaitingForInitialization := False;
+    CurrentState := lssStopped;
 end;
 
 function TLanguageServerController.IsRunning: Boolean;
 begin
-    Result := Assigned(Client);
+    Result := LanguageServerIsReady(CurrentState);
 end;
 
 function TLanguageServerController.UsesConfiguration(
@@ -303,8 +315,20 @@ end;
 
 procedure TLanguageServerController.ShowProblems;
 var
+    ErrorMessage: string;
     LineNumber: Integer;
 begin
+    if not LanguageServerIsReady(CurrentState) then
+    begin
+        ErrorMessage := LanguageServerProblemsUnavailableMessage(CurrentState);
+        LCLIntf.MessageBox(
+            OwnerForm.Handle,
+            PChar(ErrorMessage),
+            'Verificador de Markdown indisponível',
+            MB_OK or MB_ICONWARNING
+        );
+        Exit;
+    end;
     if ChooseProblemLine(OwnerForm, Diagnostics, LineNumber) and Assigned(NavigateToLineHandler) then
         NavigateToLineHandler(LineNumber);
 end;

@@ -7,10 +7,11 @@ interface
 
 uses
     Forms,
+    Recent_Files,
     StdCtrls;
 
 type
-    TLoadDocumentEvent = function(const FileName: string): Boolean of object;
+    TLoadDocumentEvent = TFileOpenEvent;
 
     TSessionController = class
     private
@@ -29,18 +30,16 @@ type
         procedure Persist(const CurrentFileName: string);
         procedure PositionCursorAtLine(LineNumber: Integer);
         procedure RememberFilePosition(const FileName: string);
-        procedure Restore;
+        function Restore: Boolean;
         procedure RestoreFilePosition(const FileName: string);
     end;
 
 implementation
 
 uses
-    File_Position_History,
     LCLIntf,
     LCLType,
     Line_Navigation,
-    Session,
     SysUtils;
 
 procedure TSessionController.ShowError(const DialogTitle, ErrorMessage: string);
@@ -65,12 +64,6 @@ end;
 procedure TSessionController.Persist(const CurrentFileName: string);
 begin
     RememberFilePosition(CurrentFileName);
-    try
-        SaveLastSession(SettingsFileName, CurrentFileName, EditorMemo.CaretPos.Y + 1);
-    except
-        on Error: Exception do
-            ShowError('Erro ao salvar última sessão', Error.Message);
-    end;
 end;
 
 procedure TSessionController.PositionCursorAtLine(LineNumber: Integer);
@@ -86,39 +79,16 @@ begin
     if (FileName = '') or not FileExists(FileName) then
         Exit;
     try
-        SaveFileLine(SettingsFileName, FileName, EditorMemo.CaretPos.Y + 1);
+        SaveRecentFileLine(SettingsFileName, FileName, EditorMemo.CaretPos.Y + 1);
     except
         on Error: Exception do
             ShowError('Erro ao salvar posição do arquivo', Error.Message);
     end;
 end;
 
-procedure TSessionController.Restore;
-var
-    Session: TEditorSession;
+function TSessionController.Restore: Boolean;
 begin
-    try
-        Session := LoadLastSession(SettingsFileName);
-        if Session.FileName = '' then
-            Exit;
-        if not FileExists(Session.FileName) then
-        begin
-            SaveLastSession(SettingsFileName, '', 1);
-            ShowError(
-                'Último arquivo não encontrado',
-                'O arquivo da última sessão não existe mais:' + LineEnding + Session.FileName
-            );
-            Exit;
-        end;
-    except
-        on Error: Exception do
-        begin
-            ShowError('Erro ao restaurar última sessão', Error.Message);
-            Exit;
-        end;
-    end;
-    if LoadDocumentHandler(Session.FileName) then
-        PositionCursorAtLine(Session.LineNumber);
+    Result := TryOpenMostRecentAvailableFile(SettingsFileName, LoadDocumentHandler);
 end;
 
 procedure TSessionController.RestoreFilePosition(const FileName: string);
@@ -128,7 +98,7 @@ begin
     if FileName = '' then
         Exit;
     try
-        LineNumber := LoadFileLine(SettingsFileName, FileName);
+        LineNumber := LoadRecentFileLine(SettingsFileName, FileName);
         PositionCursorAtLine(LineNumber);
     except
         on Error: Exception do

@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="40">
+    <Units Count="38">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -152,9 +152,9 @@
         <UnitName Value="Recent_Files_Controller"/>
       </Unit16>
       <Unit17>
-        <Filename Value="src/services/settings/session.pas"/>
+        <Filename Value="src/gui/focus_preserving_page_control.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Session"/>
+        <UnitName Value="Focus_Preserving_Page_Control"/>
       </Unit17>
       <Unit18>
         <Filename Value="src/gui/controllers/session_controller.pas"/>
@@ -162,9 +162,9 @@
         <UnitName Value="Session_Controller"/>
       </Unit18>
       <Unit19>
-        <Filename Value="src/services/settings/file_position_history.pas"/>
+        <Filename Value="src/gui/controllers/options_controller.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="File_Position_History"/>
+        <UnitName Value="Options_Controller"/>
       </Unit19>
       <Unit20>
         <Filename Value="src/gui/accessibility.pas"/>
@@ -256,16 +256,6 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Markdown_Checker_Tab"/>
       </Unit37>
-      <Unit38>
-        <Filename Value="src/gui/controllers/options_controller.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="Options_Controller"/>
-      </Unit38>
-      <Unit39>
-        <Filename Value="src/gui/focus_preserving_page_control.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="Focus_Preserving_Page_Control"/>
-      </Unit39>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

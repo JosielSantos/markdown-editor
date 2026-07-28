@@ -32,6 +32,7 @@ type
             const TheSettingsFileName: string
         );
         destructor Destroy; override;
+        procedure RemoveMissingFiles;
         procedure Remember(const FileName: string);
     end;
 
@@ -112,6 +113,14 @@ destructor TRecentFilesController.Destroy;
 begin
     Files.Free;
     inherited Destroy;
+end;
+
+procedure TRecentFilesController.RemoveMissingFiles;
+begin
+    if not RemoveMissingRecentFiles(Files) then
+        Exit;
+    Persist;
+    RefreshMenu;
 end;
 
 procedure TRecentFilesController.Remember(const FileName: string);

@@ -42,6 +42,7 @@ type
         procedure NewDocument(Sender: TObject);
         procedure OpenMarkdown(Sender: TObject);
         procedure OpenRecentMarkdown(const FileName: string);
+        function LoadMarkdownDocumentSilently(const FileName: string): Boolean;
         function SaveCurrentDocument: Boolean;
         function SaveDocumentAs: Boolean;
         function SaveDocumentTo(const FileName: string; const Encoding: TDocumentEncoding): Boolean;
@@ -51,6 +52,7 @@ type
         procedure ShowOptions(Sender: TObject);
         procedure ShowProblems(Sender: TObject);
         procedure ShowPreview(Sender: TObject);
+        function TryLoadMarkdownDocument(const FileName: string; ReportErrors: Boolean): Boolean;
         procedure UpdateWindowTitle;
     public
         constructor Create(TheOwner: TComponent); override;
@@ -138,7 +140,7 @@ begin
     if EditorPreferences.UseMarkdownChecker then
         LanguageServer
             .Start(EditorPreferences.MarkdownCheckerExecutableFileName, EditorPreferences.MarkdownCheckerArguments);
-    Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocument, DefaultSettingsFileName);
+    Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocumentSilently, DefaultSettingsFileName);
     Document := CreateDocumentState;
     OnCloseQuery := @CanCloseEditor;
     UpdateWindowTitle;
@@ -264,6 +266,16 @@ begin
 end;
 
 function TEditorForm.LoadMarkdownDocument(const FileName: string): Boolean;
+begin
+    Result := TryLoadMarkdownDocument(FileName, True);
+end;
+
+function TEditorForm.LoadMarkdownDocumentSilently(const FileName: string): Boolean;
+begin
+    Result := TryLoadMarkdownDocument(FileName, False);
+end;
+
+function TEditorForm.TryLoadMarkdownDocument(const FileName: string; ReportErrors: Boolean): Boolean;
 var
     LoadedEncoding: TDocumentEncoding;
     ResolvedFileName: string;
@@ -283,7 +295,8 @@ begin
         Result := True;
     except
         on Error: Exception do
-            ShowErrorMessage('Erro ao abrir arquivo', Error.Message);
+            if ReportErrors then
+                ShowErrorMessage('Erro ao abrir arquivo', Error.Message);
     end;
 end;
 
@@ -327,7 +340,10 @@ end;
 procedure TEditorForm.RestoreLastSession;
 begin
     if EditorPreferences.LoadLastFile then
+    begin
+        RecentFiles.RemoveMissingFiles;
         Session.Restore;
+    end;
 end;
 
 function TEditorForm.SaveCurrentDocument: Boolean;

@@ -9,7 +9,7 @@ uses
     Test_Command_Line,
     Test_Document_State,
     Test_File_Association,
-    Test_File_Position_History,
+    Test_Recent_File_Positions,
     Test_Files,
     Test_Html_Export,
     Test_Language_Server_Process,
@@ -22,8 +22,7 @@ uses
     Test_Lsp_Protocol,
     Test_Preferences,
     Test_Renderer,
-    Test_Recent_Files,
-    Test_Session;
+    Test_Recent_Files;
 
 var
     Runner: TTestRunner;

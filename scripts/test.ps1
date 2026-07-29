@@ -18,7 +18,7 @@ $sourceUnitArguments = @("-Fu$sourceRoot") + @(
     Get-ChildItem $sourceRoot -Directory -Recurse |
         ForEach-Object { "-Fu$($_.FullName)" }
 )
-$testUnitArguments = @("-Fu$testRoot") + @(
+$testUnitArguments = @('-gl', "-Fu$testRoot") + @(
     Get-ChildItem $testRoot -Directory -Recurse |
         ForEach-Object { "-Fu$($_.FullName)" }
 )

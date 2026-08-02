@@ -1,5 +1,5 @@
 #define AppName "Markdown Editor"
-#define AppVersion "0.5.0"
+#define AppVersion "0.6.0"
 #define AppPublisher "Josiel Santos"
 #define AppUrl "https://github.com/JosielSantos/markdown-editor"
 #define AppExecutable "markdown-editor.exe"

@@ -14,6 +14,7 @@ type
         procedure CreatesUtf8DocumentState;
         procedure DetectsContentChanges;
         procedure ClearsModifiedStateWhenContentIsRestored;
+        procedure TreatsMissingFileAsUnsaved;
     end;
 
 implementation
@@ -48,6 +49,16 @@ begin
     AssertTrue('caractere apagado', HasContentChanged(CurrentContent, SavedContent));
     CurrentContent := CurrentContent + 'l';
     AssertFalse('caractere restaurado', HasContentChanged(CurrentContent, SavedContent));
+end;
+
+procedure TDocumentStateTests.TreatsMissingFileAsUnsaved;
+var
+    Document: TDocumentState;
+begin
+    Document := CreateDocumentState('documento.md');
+    Document.SavedContent := 'conteúdo';
+    Document.MissingOnDisk := True;
+    AssertTrue(HasUnsavedChanges('conteúdo', Document));
 end;
 
 initialization

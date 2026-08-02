@@ -13,6 +13,7 @@ type
     TEditorMenuActions = record
         NewDocument: TNotifyEvent;
         OpenDocument: TNotifyEvent;
+        RefreshDocument: TNotifyEvent;
         SaveDocument: TNotifyEvent;
         SaveDocumentAs: TNotifyEvent;
         ExportHtml: TNotifyEvent;
@@ -72,6 +73,7 @@ begin
     AddMenuItem(FileMenu, '&Novo', ShortCut(Ord('N'), [ssCtrl]), Actions.NewDocument);
     AddMenuItem(FileMenu, '&Abrir...', ShortCut(Ord('O'), [ssCtrl]), Actions.OpenDocument);
     RecentFilesMenu := AddMenuItem(FileMenu, 'Arquivos &recentes', 0, nil);
+    AddMenuItem(FileMenu, 'Atuali&zar arquivo', ShortCut(VK_F5, []), Actions.RefreshDocument);
     AddMenuItem(FileMenu, '-', 0, nil);
     AddMenuItem(FileMenu, '&Salvar', ShortCut(Ord('S'), [ssCtrl]), Actions.SaveDocument);
     AddMenuItem(FileMenu, 'Salvar &como...', ShortCut(Ord('S'), [ssCtrl, ssShift]), Actions.SaveDocumentAs);

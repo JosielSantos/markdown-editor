@@ -16,6 +16,7 @@ type
         ChangeDueAt: QWord;
         ChangeHandler: TNotifyEvent;
         CheckPending: Boolean;
+        Watching: Boolean;
         Timer: TTimer;
         Watcher: TFileWatcher;
         procedure TimerTick(Sender: TObject);
@@ -55,12 +56,14 @@ end;
 
 procedure TFileChangeController.ScheduleCheck;
 begin
+    Timer.Enabled := True;
     ChangeDueAt := GetTickCount64 + ChangeDebounceMilliseconds;
     CheckPending := True;
 end;
 
 procedure TFileChangeController.Stop;
 begin
+    Watching := False;
     Timer.Enabled := False;
     CheckPending := False;
     Watcher.Stop;
@@ -75,6 +78,8 @@ begin
     CheckPending := False;
     if Assigned(ChangeHandler) then
         ChangeHandler(Self);
+    if not Watching and not CheckPending then
+        Timer.Enabled := False;
 end;
 
 procedure TFileChangeController.Watch(const FileName: string);
@@ -82,9 +87,11 @@ begin
     CheckPending := False;
     try
         Watcher.Watch(FileName);
-        Timer.Enabled := FileName <> '';
+        Watching := FileName <> '';
+        Timer.Enabled := Watching;
     except
         Timer.Enabled := False;
+        Watching := False;
         Watcher.Stop;
     end;
 end;

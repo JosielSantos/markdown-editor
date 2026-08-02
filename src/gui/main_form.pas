@@ -44,6 +44,7 @@ type
         procedure NewDocument(Sender: TObject);
         procedure OpenMarkdown(Sender: TObject);
         procedure OpenRecentMarkdown(const FileName: string);
+        procedure RefreshDocument(Sender: TObject);
         function LoadMarkdownDocumentSilently(const FileName: string): Boolean;
         function SaveCurrentDocument: Boolean;
         function SaveDocumentAs: Boolean;
@@ -113,6 +114,7 @@ var
 begin
     Actions.NewDocument := @NewDocument;
     Actions.OpenDocument := @OpenMarkdown;
+    Actions.RefreshDocument := @RefreshDocument;
     Actions.SaveDocument := @SaveMarkdown;
     Actions.SaveDocumentAs := @SaveMarkdownAs;
     Actions.ExportHtml := @ExportHtml;
@@ -351,6 +353,11 @@ begin
     if not HandleUnsavedChanges then
         Exit;
     LoadMarkdownDocument(FileName);
+end;
+
+procedure TEditorForm.RefreshDocument(Sender: TObject);
+begin
+    ExternalFiles.Refresh;
 end;
 
 procedure TEditorForm.RestoreLastSession;

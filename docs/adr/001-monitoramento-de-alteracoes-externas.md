@@ -66,6 +66,10 @@ interrompe o watcher e o reinicia se outra opção for aplicada posteriormente.
 Quando uma atualização é recusada, o texto do editor é preservado e o novo conteúdo em disco passa a ser a referência de
 comparação. Assim, o documento fica marcado como modificado e o mesmo estado externo não provoca diálogos repetidos.
 
+F5 executa uma atualização manual independente da preferência. Se o conteúdo em disco for diferente, ele substitui o
+editor sem confirmação e emite um beep depois da atualização. Se o conteúdo for igual, nenhuma alteração ou som é
+produzido. O comando também funciona quando o monitoramento automático está desabilitado.
+
 Ao recarregar, a aplicação preserva cursor e seleção, atualiza o conteúdo dentro de `BeginUpdate`/`EndUpdate`, registra o
 encoding detectado, redefine `SavedContent`, notifica o servidor de linguagem e atualiza o título da janela.
 
@@ -147,6 +151,7 @@ Negativas:
 - renomeios são tratados como remoções;
 - a API não identifica o arquivo que originou a notificação.
 - o modo automático pode descartar alterações locais, conforme a preferência explícita do usuário.
+- F5 também pode descartar alterações locais, como resultado explícito do comando de atualização manual.
 
 ## Critérios para reconsideração
 

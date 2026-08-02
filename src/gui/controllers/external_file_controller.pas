@@ -21,9 +21,11 @@ type
         Document: PDocumentState;
         EditorMemo: TMemo;
         FileChanges: TFileChangeController;
+        ForceNextCheck: Boolean;
         LanguageServer: TLanguageServerController;
         MonitoringMode: TFileMonitoringMode;
         OwnerForm: TCustomForm;
+        SignalNextUpdate: Boolean;
         StateChangedHandler: TDocumentStateChangedEvent;
         procedure ApplyContent(const Content: string; const Encoding: TDocumentEncoding);
         procedure CheckExternalFile(Sender: TObject);
@@ -39,6 +41,7 @@ type
         );
         destructor Destroy; override;
         procedure Configure(TheMonitoringMode: TFileMonitoringMode; const FileName: string);
+        procedure Refresh;
         procedure Stop;
         procedure Watch(const FileName: string);
     end;
@@ -49,7 +52,8 @@ uses
     Files,
     LCLIntf,
     LCLType,
-    SysUtils;
+    SysUtils,
+    Windows;
 
 constructor TExternalFileController.Create(
     TheOwnerForm: TCustomForm;
@@ -106,9 +110,15 @@ var
     Choice: Integer;
     ExternalContent: string;
     ExternalEncoding: TDocumentEncoding;
+    ForceUpdate: Boolean;
     PromptText: string;
+    SignalUpdate: Boolean;
 begin
-    if (MonitoringMode = fmmDisabled) or (Document^.FileName = '') then
+    ForceUpdate := ForceNextCheck;
+    SignalUpdate := SignalNextUpdate;
+    ForceNextCheck := False;
+    SignalNextUpdate := False;
+    if ((MonitoringMode = fmmDisabled) and not ForceUpdate) or (Document^.FileName = '') then
         Exit;
     if not FileExists(Document^.FileName) then
     begin
@@ -128,6 +138,8 @@ begin
         ExternalContent := AdjustLineBreaks(ReadTextFile(Document^.FileName, ExternalEncoding), tlbsCRLF);
     except
         FileChanges.ScheduleCheck;
+        ForceNextCheck := ForceUpdate;
+        SignalNextUpdate := SignalUpdate;
         Exit;
     end;
     Document^.MissingOnDisk := False;
@@ -137,7 +149,7 @@ begin
         NotifyStateChanged;
         Exit;
     end;
-    if MonitoringMode = fmmAutomatic then
+    if ForceUpdate or (MonitoringMode = fmmAutomatic) then
         Choice := IDYES
     else
     begin
@@ -154,7 +166,11 @@ begin
             );
     end;
     if Choice = IDYES then
-        ApplyContent(ExternalContent, ExternalEncoding)
+    begin
+        ApplyContent(ExternalContent, ExternalEncoding);
+        if SignalUpdate then
+            Windows.MessageBeep(MB_OK);
+    end
     else
     begin
         Document^.Encoding := ExternalEncoding;
@@ -176,6 +192,13 @@ procedure TExternalFileController.NotifyStateChanged;
 begin
     if Assigned(StateChangedHandler) then
         StateChangedHandler;
+end;
+
+procedure TExternalFileController.Refresh;
+begin
+    ForceNextCheck := True;
+    SignalNextUpdate := True;
+    CheckExternalFile(Self);
 end;
 
 procedure TExternalFileController.Stop;

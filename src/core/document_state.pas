@@ -17,11 +17,15 @@ type
     TDocumentState = record
         Encoding: TDocumentEncoding;
         FileName: string;
+        MissingOnDisk: Boolean;
         SavedContent: string;
     end;
 
+    PDocumentState = ^TDocumentState;
+
 function CreateDocumentState(const FileName: string = ''): TDocumentState;
 function HasContentChanged(const CurrentContent, SavedContent: string): Boolean;
+function HasUnsavedChanges(const CurrentContent: string; const Document: TDocumentState): Boolean;
 
 implementation
 
@@ -30,12 +34,18 @@ begin
     Result.Encoding.Name := DOCUMENT_ENCODING_UTF8;
     Result.Encoding.HasUtf8Bom := False;
     Result.FileName := FileName;
+    Result.MissingOnDisk := False;
     Result.SavedContent := '';
 end;
 
 function HasContentChanged(const CurrentContent, SavedContent: string): Boolean;
 begin
     Result := CurrentContent <> SavedContent;
+end;
+
+function HasUnsavedChanges(const CurrentContent: string; const Document: TDocumentState): Boolean;
+begin
+    Result := Document.MissingOnDisk or HasContentChanged(CurrentContent, Document.SavedContent);
 end;
 
 end.

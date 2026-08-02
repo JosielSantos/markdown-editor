@@ -12,6 +12,7 @@ uses
     Test_Command_Line,
     Test_Document_State,
     Test_File_Association,
+    Test_File_Watcher,
     Test_Recent_File_Positions,
     Test_Files,
     Test_Html_Export,

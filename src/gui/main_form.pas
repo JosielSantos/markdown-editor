@@ -8,6 +8,7 @@ interface
 uses
     Classes,
     Document_State,
+    External_File_Controller,
     Forms,
     Language_Server_Controller,
     Options_Controller,
@@ -22,6 +23,7 @@ type
         Document: TDocumentState;
         EditorPreferences: TEditorPreferences;
         EditorMemo: TMemo;
+        ExternalFiles: TExternalFileController;
         LanguageServer: TLanguageServerController;
         RecentFiles: TRecentFilesController;
         OptionsController: TOptionsController;
@@ -142,12 +144,14 @@ begin
             .Start(EditorPreferences.MarkdownCheckerExecutableFileName, EditorPreferences.MarkdownCheckerArguments);
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocumentSilently, DefaultSettingsFileName);
     Document := CreateDocumentState;
+    ExternalFiles := TExternalFileController.Create(Self, EditorMemo, LanguageServer, @Document, @UpdateWindowTitle);
     OnCloseQuery := @CanCloseEditor;
     UpdateWindowTitle;
 end;
 
 destructor TEditorForm.Destroy;
 begin
+    ExternalFiles.Free;
     OptionsController.Free;
     LanguageServer.Free;
     Session.Free;
@@ -212,7 +216,7 @@ function TEditorForm.HandleUnsavedChanges: Boolean;
 var
     Choice: Integer;
 begin
-    if not HasContentChanged(EditorMemo.Text, Document.SavedContent) then
+    if not HasUnsavedChanges(EditorMemo.Text, Document) then
         Exit(True);
     Choice :=
         LCLIntf.MessageBox(
@@ -246,6 +250,7 @@ begin
         Exit;
     Session.RememberFilePosition(Document.FileName);
     LanguageServer.CloseDocument;
+    ExternalFiles.Stop;
     EditorMemo.Clear;
     Document := CreateDocumentState;
     MarkDocumentSaved;
@@ -262,6 +267,7 @@ begin
     EditorMemo.Clear;
     Document := CreateDocumentState(ExpandFileName(FileName));
     MarkDocumentSaved;
+    ExternalFiles.Watch(Document.FileName);
     LanguageServer.OpenDocument(Document.FileName, EditorMemo.Text);
 end;
 
@@ -288,9 +294,11 @@ begin
         EditorMemo.Text := ReadTextFile(ResolvedFileName, LoadedEncoding);
         Document.FileName := ResolvedFileName;
         Document.Encoding := LoadedEncoding;
+        Document.MissingOnDisk := False;
         MarkDocumentSaved;
         RecentFiles.Remember(Document.FileName);
         Session.RestoreFilePosition(Document.FileName);
+        ExternalFiles.Watch(Document.FileName);
         LanguageServer.OpenDocument(Document.FileName, EditorMemo.Text);
         Result := True;
     except
@@ -371,9 +379,11 @@ begin
         WriteTextFile(FileName, EditorMemo.Text, Encoding);
         Document.FileName := FileName;
         Document.Encoding := Encoding;
+        Document.MissingOnDisk := False;
         MarkDocumentSaved;
         RecentFiles.Remember(Document.FileName);
         Session.RememberFilePosition(Document.FileName);
+        ExternalFiles.Watch(Document.FileName);
         LanguageServer.DocumentSaved(Document.FileName, EditorMemo.Text);
         Result := True;
     except
@@ -438,7 +448,7 @@ begin
         DocumentName := 'Sem título'
     else
         DocumentName := ExtractFileName(Document.FileName);
-    if HasContentChanged(EditorMemo.Text, Document.SavedContent) then
+    if HasUnsavedChanges(EditorMemo.Text, Document) then
         DocumentName := DocumentName + ' *';
     Caption := DocumentName + ' — Markdown Editor';
 end;

@@ -8,6 +8,7 @@ uses
     SysUtils,
     FPCUnit,
     TestRegistry,
+    Test_Async_File_Reader,
     Test_Clipboard_Text,
     Test_Command_Line,
     Test_Document_State,

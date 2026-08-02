@@ -20,14 +20,21 @@ Usar `FindFirstChangeNotificationW` para observar, sem recursão, o diretório q
 do Windows será apenas um gatilho: depois dela, a aplicação verificará exclusivamente `Document.FileName` e comparará seu
 conteúdo com `Document.SavedContent`.
 
-A implementação é dividida em três responsabilidades:
+A implementação é dividida em quatro responsabilidades:
 
 1. `TFileWatcher` mantém uma thread bloqueada na notificação nativa e sinaliza uma flag atômica. A thread não acessa
    controles da interface.
 2. `TFileChangeController` consulta a flag na thread principal e aplica debounce de 350 ms para agrupar eventos de uma
    mesma gravação.
-3. `TExternalFileController` verifica existência, lê e compara o arquivo aberto, decide a interação com o usuário e
-   atualiza o editor e o servidor de linguagem.
+3. `TAsyncFileReader` mantém um worker persistente que verifica existência, lê, detecta o encoding e compara o conteúdo
+   fora da thread da interface.
+4. `TExternalFileController` solicita leituras, consulta resultados prontos, decide a interação com o usuário e atualiza o
+   editor e o servidor de linguagem na thread principal.
+
+O reader mantém somente a solicitação pendente mais recente. Cada solicitação recebe um identificador; um resultado só é
+publicado se ainda pertencer à solicitação atual. Abrir ou salvar outro documento, interromper o monitoramento ou alterar
+sua configuração cancela logicamente a leitura, impedindo que um resultado obsoleto seja aplicado. Um timer de 50 ms fica
+ativo apenas enquanto há uma solicitação e transfere o resultado pronto para o controller da interface.
 
 O fluxo é:
 
@@ -38,15 +45,18 @@ evento no diretório
 debounce de 350 ms
         |
         v
-Document.FileName ainda existe? -- não --> marcar como removido
+enfileirar a versão mais recente de Document.FileName e SavedContent
+        |
+        v
+worker: o arquivo ainda existe? -- não --> publicar remoção
         |
        sim
         |
         v
-ler conteúdo e encoding
+worker: ler conteúdo e encoding
         |
         v
-conteúdo igual a SavedContent? -- sim --> ignorar
+worker: conteúdo igual a SavedContent? -- sim --> publicar sem alteração
         |
        não
         |
@@ -73,9 +83,12 @@ produzido. O comando também funciona quando o monitoramento automático está d
 Ao recarregar, a aplicação preserva cursor e seleção, atualiza o conteúdo dentro de `BeginUpdate`/`EndUpdate`, registra o
 encoding detectado, redefine `SavedContent`, notifica o servidor de linguagem e atualiza o título da janela.
 
-Se a leitura falhar temporariamente, por exemplo enquanto outro processo ainda escreve o arquivo, uma nova verificação é
-agendada. Eventos produzidos pelo próprio salvamento são inofensivos: o conteúdo lido será igual a `SavedContent` e será
-ignorado.
+F5 e as verificações automáticas retornam ao loop de mensagens depois de enfileirar a leitura. Existência, I/O, detecção de
+encoding e comparação não bloqueiam a interface. A atribuição do texto ao controle permanece na thread principal, como
+exigido pela LCL.
+
+Se a leitura falhar temporariamente, por exemplo enquanto outro processo ainda escreve o arquivo, uma nova solicitação é
+agendada. Eventos produzidos pelo próprio salvamento são inofensivos: o conteúdo será igual a `SavedContent` e ignorado.
 
 ## Por que observar o diretório
 
@@ -126,6 +139,14 @@ callbacks fora da thread da interface. Sua licença também exigiria manter term
 Possui licença BSD e implementação madura para Delphi. Foi rejeitada porque depende de outras units Cromis e exigiria um
 porte relevante para FPC/Lazarus, maior que a integração nativa necessária neste projeto.
 
+### Leitura síncrona na thread da interface
+
+Ler e comparar o arquivo diretamente no callback do timer ou do F5 reduziria o estado e dispensaria um segundo worker.
+Essa simplicidade não garante responsividade: uma unidade de rede, armazenamento lento, arquivo grande ou interferência de
+outro processo pode bloquear o loop de mensagens por tempo perceptível. A carga esperada pequena justifica ler o conteúdo
+inteiro, mas não executar I/O síncrono na GUI. A alternativa foi rejeitada em favor do reader persistente com coalescência
+e cancelamento lógico.
+
 ### Comparar metadados antes de ler
 
 Manter tamanho e data de modificação poderia evitar algumas leituras causadas por outros arquivos do diretório. Isso
@@ -141,7 +162,9 @@ Positivas:
 - compatibilidade com FPC 3.2.2;
 - comparação do conteúdo real, evitando atualizações visíveis por eventos irrelevantes;
 - suporte a substituições atômicas, remoções e recriações;
-- separação entre thread nativa, debounce e comportamento da interface.
+- existência, leitura, detecção de encoding e comparação não bloqueiam a thread da interface;
+- solicitações repetidas são coalescidas e resultados obsoletos não alteram outro documento;
+- separação entre notificação nativa, debounce, leitura e comportamento da interface.
 
 Negativas:
 
@@ -149,8 +172,11 @@ Negativas:
 - alterações em outros arquivos do diretório podem causar uma leitura desnecessária;
 - o arquivo inteiro é lido para comparação;
 - renomeios são tratados como remoções;
-- a API não identifica o arquivo que originou a notificação.
-- o modo automático pode descartar alterações locais, conforme a preferência explícita do usuário.
+- a API não identifica o arquivo que originou a notificação;
+- um worker e a sincronização de solicitações e resultados aumentam o estado e a complexidade de encerramento;
+- o encerramento aguarda uma leitura em andamento, pois o I/O síncrono do worker não é interrompido;
+- a aplicação de conteúdo muito grande ao `TMemo` ainda ocupa a thread da interface;
+- o modo automático pode descartar alterações locais, conforme a preferência explícita do usuário;
 - F5 também pode descartar alterações locais, como resultado explícito do comando de atualização manual.
 
 ## Critérios para reconsideração
@@ -158,3 +184,5 @@ Negativas:
 Reavaliar esta decisão se medições mostrarem impacto relevante em arquivos grandes, unidades de rede ou diretórios com
 atividade intensa; se o produto passar a acompanhar renomeios; ou se precisar oferecer suporte a outros sistemas
 operacionais. Nesses casos, `ReadDirectoryChangesW` ou uma abstração multiplataforma mantida volta a ser justificável.
+Também reconsiderar a leitura síncrona dentro do worker se o encerramento durante I/O lento se tornar um problema; nesse
+caso, usar I/O cancelável ou assíncrono do Windows.

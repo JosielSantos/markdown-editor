@@ -6,7 +6,9 @@ unit External_File_Controller;
 interface
 
 uses
+    Async_File_Reader,
     Document_State,
+    ExtCtrls,
     File_Change_Controller,
     Forms,
     Language_Server_Controller,
@@ -18,18 +20,28 @@ type
 
     TExternalFileController = class
     private
+        ActiveReadId: QWord;
+        CheckAgain: Boolean;
         Document: PDocumentState;
         EditorMemo: TMemo;
         FileChanges: TFileChangeController;
+        FileReader: TAsyncFileReader;
         ForceNextCheck: Boolean;
+        ForcePending: Boolean;
+        HandlingResult: Boolean;
         LanguageServer: TLanguageServerController;
         MonitoringMode: TFileMonitoringMode;
         OwnerForm: TCustomForm;
+        ReadTimer: TTimer;
         SignalNextUpdate: Boolean;
+        SignalPending: Boolean;
         StateChangedHandler: TDocumentStateChangedEvent;
         procedure ApplyContent(const Content: string; const Encoding: TDocumentEncoding);
-        procedure CheckExternalFile(Sender: TObject);
+        procedure CancelRead;
+        procedure HandleReadResult(const ReadResult: TAsyncFileReadResult);
         procedure NotifyStateChanged;
+        procedure ReadTimerTick(Sender: TObject);
+        procedure RequestExternalFile(Sender: TObject);
     public
         constructor Create(
             TheOwnerForm: TCustomForm;
@@ -49,11 +61,13 @@ type
 implementation
 
 uses
-    Files,
     LCLIntf,
     LCLType,
     SysUtils,
     Windows;
+
+const
+    ReadPollingMilliseconds = 50;
 
 constructor TExternalFileController.Create(
     TheOwnerForm: TCustomForm;
@@ -70,12 +84,19 @@ begin
     Document := TheDocument;
     MonitoringMode := TheMonitoringMode;
     StateChangedHandler := TheStateChangedHandler;
-    FileChanges := TFileChangeController.Create(OwnerForm, @CheckExternalFile);
+    FileReader := TAsyncFileReader.Create;
+    ReadTimer := TTimer.Create(OwnerForm);
+    ReadTimer.Enabled := False;
+    ReadTimer.Interval := ReadPollingMilliseconds;
+    ReadTimer.OnTimer := @ReadTimerTick;
+    FileChanges := TFileChangeController.Create(OwnerForm, @RequestExternalFile);
 end;
 
 destructor TExternalFileController.Destroy;
 begin
     FileChanges.Free;
+    ReadTimer.Free;
+    FileReader.Free;
     inherited Destroy;
 end;
 
@@ -105,22 +126,40 @@ begin
     NotifyStateChanged;
 end;
 
-procedure TExternalFileController.CheckExternalFile(Sender: TObject);
+procedure TExternalFileController.CancelRead;
+begin
+    FileReader.Cancel;
+    ReadTimer.Enabled := False;
+    CheckAgain := False;
+    ActiveReadId := 0;
+    ForceNextCheck := False;
+    ForcePending := False;
+    SignalNextUpdate := False;
+    SignalPending := False;
+end;
+
+procedure TExternalFileController.HandleReadResult(const ReadResult: TAsyncFileReadResult);
 var
     Choice: Integer;
-    ExternalContent: string;
-    ExternalEncoding: TDocumentEncoding;
     ForceUpdate: Boolean;
     PromptText: string;
     SignalUpdate: Boolean;
 begin
-    ForceUpdate := ForceNextCheck;
-    SignalUpdate := SignalNextUpdate;
-    ForceNextCheck := False;
-    SignalNextUpdate := False;
-    if ((MonitoringMode = fmmDisabled) and not ForceUpdate) or (Document^.FileName = '') then
+    if not SameFileName(ReadResult.FileName, Document^.FileName) then
+    begin
+        CancelRead;
         Exit;
-    if not FileExists(Document^.FileName) then
+    end;
+    if ReadResult.Status = afrsError then
+    begin
+        FileChanges.ScheduleCheck;
+        Exit;
+    end;
+    ForceUpdate := ForcePending;
+    SignalUpdate := SignalPending;
+    ForcePending := False;
+    SignalPending := False;
+    if ReadResult.Status = afrsMissing then
     begin
         if Document^.MissingOnDisk then
             Exit;
@@ -134,18 +173,10 @@ begin
         );
         Exit;
     end;
-    try
-        ExternalContent := AdjustLineBreaks(ReadTextFile(Document^.FileName, ExternalEncoding), tlbsCRLF);
-    except
-        FileChanges.ScheduleCheck;
-        ForceNextCheck := ForceUpdate;
-        SignalNextUpdate := SignalUpdate;
-        Exit;
-    end;
     Document^.MissingOnDisk := False;
-    if ExternalContent = Document^.SavedContent then
+    if not ReadResult.Changed then
     begin
-        Document^.Encoding := ExternalEncoding;
+        Document^.Encoding := ReadResult.Encoding;
         NotifyStateChanged;
         Exit;
     end;
@@ -167,20 +198,66 @@ begin
     end;
     if Choice = IDYES then
     begin
-        ApplyContent(ExternalContent, ExternalEncoding);
+        ApplyContent(ReadResult.Content, ReadResult.Encoding);
         if SignalUpdate then
             Windows.MessageBeep(MB_OK);
     end
     else
     begin
-        Document^.Encoding := ExternalEncoding;
-        Document^.SavedContent := ExternalContent;
+        Document^.Encoding := ReadResult.Encoding;
+        Document^.SavedContent := ReadResult.Content;
         NotifyStateChanged;
     end;
 end;
 
+procedure TExternalFileController.ReadTimerTick(Sender: TObject);
+var
+    CheckAfterHandling: Boolean;
+    ReadResult: TAsyncFileReadResult;
+begin
+    if not FileReader.TryTakeResult(ReadResult) then
+        Exit;
+    if ReadResult.RequestId <> ActiveReadId then
+        Exit;
+    ReadTimer.Enabled := False;
+    ActiveReadId := 0;
+    HandlingResult := True;
+    try
+        HandleReadResult(ReadResult);
+    finally
+        HandlingResult := False;
+        CheckAfterHandling := CheckAgain;
+        CheckAgain := False;
+    end;
+    if CheckAfterHandling then
+        RequestExternalFile(Self);
+end;
+
+procedure TExternalFileController.RequestExternalFile(Sender: TObject);
+var
+    ForceUpdate: Boolean;
+    SignalUpdate: Boolean;
+begin
+    ForceUpdate := ForceNextCheck;
+    SignalUpdate := SignalNextUpdate;
+    ForceNextCheck := False;
+    SignalNextUpdate := False;
+    if ((MonitoringMode = fmmDisabled) and not ForceUpdate) or (Document^.FileName = '') then
+        Exit;
+    ForcePending := ForcePending or ForceUpdate;
+    SignalPending := SignalPending or SignalUpdate;
+    if HandlingResult then
+    begin
+        CheckAgain := True;
+        Exit;
+    end;
+    ActiveReadId := FileReader.Request(Document^.FileName, Document^.SavedContent);
+    ReadTimer.Enabled := True;
+end;
+
 procedure TExternalFileController.Configure(TheMonitoringMode: TFileMonitoringMode; const FileName: string);
 begin
+    CancelRead;
     MonitoringMode := TheMonitoringMode;
     if MonitoringMode = fmmDisabled then
         FileChanges.Stop
@@ -198,16 +275,18 @@ procedure TExternalFileController.Refresh;
 begin
     ForceNextCheck := True;
     SignalNextUpdate := True;
-    CheckExternalFile(Self);
+    RequestExternalFile(Self);
 end;
 
 procedure TExternalFileController.Stop;
 begin
+    CancelRead;
     FileChanges.Stop;
 end;
 
 procedure TExternalFileController.Watch(const FileName: string);
 begin
+    CancelRead;
     if MonitoringMode = fmmDisabled then
         FileChanges.Stop
     else

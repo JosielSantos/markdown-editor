@@ -144,7 +144,15 @@ begin
             .Start(EditorPreferences.MarkdownCheckerExecutableFileName, EditorPreferences.MarkdownCheckerArguments);
     Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocumentSilently, DefaultSettingsFileName);
     Document := CreateDocumentState;
-    ExternalFiles := TExternalFileController.Create(Self, EditorMemo, LanguageServer, @Document, @UpdateWindowTitle);
+    ExternalFiles :=
+        TExternalFileController.Create(
+            Self,
+            EditorMemo,
+            LanguageServer,
+            @Document,
+            EditorPreferences.FileMonitoringMode,
+            @UpdateWindowTitle
+        );
     OnCloseQuery := @CanCloseEditor;
     UpdateWindowTitle;
 end;
@@ -410,7 +418,8 @@ end;
 
 procedure TEditorForm.ShowOptions(Sender: TObject);
 begin
-    OptionsController.Edit(EditorPreferences, Document.FileName);
+    if OptionsController.Edit(EditorPreferences, Document.FileName) then
+        ExternalFiles.Configure(EditorPreferences.FileMonitoringMode, Document.FileName);
 end;
 
 procedure TEditorForm.ShowProblems(Sender: TObject);

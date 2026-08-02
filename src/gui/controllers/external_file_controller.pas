@@ -10,6 +10,7 @@ uses
     File_Change_Controller,
     Forms,
     Language_Server_Controller,
+    Preferences,
     StdCtrls;
 
 type
@@ -21,6 +22,7 @@ type
         EditorMemo: TMemo;
         FileChanges: TFileChangeController;
         LanguageServer: TLanguageServerController;
+        MonitoringMode: TFileMonitoringMode;
         OwnerForm: TCustomForm;
         StateChangedHandler: TDocumentStateChangedEvent;
         procedure ApplyContent(const Content: string; const Encoding: TDocumentEncoding);
@@ -32,9 +34,11 @@ type
             TheEditorMemo: TMemo;
             TheLanguageServer: TLanguageServerController;
             TheDocument: PDocumentState;
+            TheMonitoringMode: TFileMonitoringMode;
             TheStateChangedHandler: TDocumentStateChangedEvent
         );
         destructor Destroy; override;
+        procedure Configure(TheMonitoringMode: TFileMonitoringMode; const FileName: string);
         procedure Stop;
         procedure Watch(const FileName: string);
     end;
@@ -52,6 +56,7 @@ constructor TExternalFileController.Create(
     TheEditorMemo: TMemo;
     TheLanguageServer: TLanguageServerController;
     TheDocument: PDocumentState;
+    TheMonitoringMode: TFileMonitoringMode;
     TheStateChangedHandler: TDocumentStateChangedEvent
 );
 begin
@@ -59,6 +64,7 @@ begin
     EditorMemo := TheEditorMemo;
     LanguageServer := TheLanguageServer;
     Document := TheDocument;
+    MonitoringMode := TheMonitoringMode;
     StateChangedHandler := TheStateChangedHandler;
     FileChanges := TFileChangeController.Create(OwnerForm, @CheckExternalFile);
 end;
@@ -100,8 +106,9 @@ var
     Choice: Integer;
     ExternalContent: string;
     ExternalEncoding: TDocumentEncoding;
+    PromptText: string;
 begin
-    if Document^.FileName = '' then
+    if (MonitoringMode = fmmDisabled) or (Document^.FileName = '') then
         Exit;
     if not FileExists(Document^.FileName) then
     begin
@@ -130,15 +137,22 @@ begin
         NotifyStateChanged;
         Exit;
     end;
-    Choice := IDYES;
-    if HasContentChanged(EditorMemo.Text, Document^.SavedContent) then
+    if MonitoringMode = fmmAutomatic then
+        Choice := IDYES
+    else
+    begin
+        PromptText := 'O arquivo foi alterado por outro programa. Deseja atualizar o editor?';
+        if HasContentChanged(EditorMemo.Text, Document^.SavedContent) then
+            PromptText :=
+                'O arquivo foi alterado por outro programa. Deseja recarregá-lo e descartar as alterações deste editor?';
         Choice :=
             LCLIntf.MessageBox(
                 OwnerForm.Handle,
-                'O arquivo foi alterado por outro programa. Deseja recarregá-lo e descartar as alterações deste editor?',
+                PChar(PromptText),
                 'Arquivo alterado',
                 MB_ICONQUESTION or MB_YESNO or MB_DEFBUTTON2
             );
+    end;
     if Choice = IDYES then
         ApplyContent(ExternalContent, ExternalEncoding)
     else
@@ -147,6 +161,15 @@ begin
         Document^.SavedContent := ExternalContent;
         NotifyStateChanged;
     end;
+end;
+
+procedure TExternalFileController.Configure(TheMonitoringMode: TFileMonitoringMode; const FileName: string);
+begin
+    MonitoringMode := TheMonitoringMode;
+    if MonitoringMode = fmmDisabled then
+        FileChanges.Stop
+    else
+        FileChanges.Watch(FileName);
 end;
 
 procedure TExternalFileController.NotifyStateChanged;
@@ -162,7 +185,10 @@ end;
 
 procedure TExternalFileController.Watch(const FileName: string);
 begin
-    FileChanges.Watch(FileName);
+    if MonitoringMode = fmmDisabled then
+        FileChanges.Stop
+    else
+        FileChanges.Watch(FileName);
 end;
 
 end.

@@ -6,7 +6,10 @@ unit Preferences;
 interface
 
 type
+    TFileMonitoringMode = (fmmAutomatic, fmmAskBeforeUpdating, fmmDisabled);
+
     TEditorPreferences = record
+        FileMonitoringMode: TFileMonitoringMode;
         LoadLastFile: Boolean;
         MarkdownCheckerArguments: string;
         MarkdownCheckerExecutableFileName: string;
@@ -27,6 +30,10 @@ uses
     SysUtils;
 
 const
+    FileMonitoringAutomatic = 'automatic';
+    FileMonitoringAsk = 'ask';
+    FileMonitoringDisabled = 'disabled';
+    FileMonitoringModeKey = 'FileMonitoringMode';
     GeneralSection = 'General';
     LoadLastFileKey = 'LoadLastFile';
     MarkdownCheckerSection = 'MarkdownLanguageServer';
@@ -34,8 +41,29 @@ const
     MarkdownCheckerEnabledKey = 'Enabled';
     MarkdownCheckerExecutableFileNameKey = 'ExecutableFileName';
 
+function FileMonitoringModeName(Mode: TFileMonitoringMode): string;
+begin
+    case Mode of
+        fmmAutomatic: Result := FileMonitoringAutomatic;
+        fmmDisabled: Result := FileMonitoringDisabled;
+    else
+        Result := FileMonitoringAsk;
+    end;
+end;
+
+function ParseFileMonitoringMode(const Value: string): TFileMonitoringMode;
+begin
+    if SameText(Value, FileMonitoringAutomatic) then
+        Result := fmmAutomatic
+    else if SameText(Value, FileMonitoringDisabled) then
+        Result := fmmDisabled
+    else
+        Result := fmmAskBeforeUpdating;
+end;
+
 function DefaultEditorPreferences(const DefaultMarkdownCheckerExecutableFileName: string): TEditorPreferences;
 begin
+    Result.FileMonitoringMode := fmmAskBeforeUpdating;
     Result.LoadLastFile := True;
     Result.MarkdownCheckerArguments := '';
     Result.MarkdownCheckerExecutableFileName := DefaultMarkdownCheckerExecutableFileName;
@@ -52,6 +80,14 @@ begin
     Result := DefaultEditorPreferences(DefaultMarkdownCheckerExecutableFileName);
     Settings := TMemIniFile.Create(SettingsFileName);
     try
+        Result.FileMonitoringMode :=
+            ParseFileMonitoringMode(
+                Settings.ReadString(
+                    GeneralSection,
+                    FileMonitoringModeKey,
+                    FileMonitoringModeName(Result.FileMonitoringMode)
+                )
+            );
         Result.LoadLastFile := Settings.ReadBool(GeneralSection, LoadLastFileKey, Result.LoadLastFile);
         Result.MarkdownCheckerArguments :=
             Settings.ReadString(MarkdownCheckerSection, MarkdownCheckerArgumentsKey, Result.MarkdownCheckerArguments);
@@ -75,6 +111,11 @@ begin
     ForceDirectories(ExtractFileDir(SettingsFileName));
     Settings := TMemIniFile.Create(SettingsFileName);
     try
+        Settings.WriteString(
+            GeneralSection,
+            FileMonitoringModeKey,
+            FileMonitoringModeName(EditorPreferences.FileMonitoringMode)
+        );
         Settings.WriteBool(GeneralSection, LoadLastFileKey, EditorPreferences.LoadLastFile);
         Settings.WriteString(
             MarkdownCheckerSection,

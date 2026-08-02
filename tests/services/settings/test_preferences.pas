@@ -12,8 +12,10 @@ uses
 type
     TPreferencesTests = class(TTestCase)
     published
+        procedure DefaultsToAskingBeforeUpdatingOpenFile;
         procedure DefaultsToLoadingLastFile;
         procedure DefaultsToNotUsingMarkdownChecker;
+        procedure PersistsFileMonitoringMode;
         procedure PersistsLoadLastFilePreference;
         procedure PersistsMarkdownCheckerPreferences;
     end;
@@ -23,6 +25,20 @@ implementation
 uses
     Preferences,
     SysUtils;
+
+procedure TPreferencesTests.DefaultsToAskingBeforeUpdatingOpenFile;
+var
+    EditorPreferences: TEditorPreferences;
+    SettingsFileName: string;
+begin
+    SettingsFileName := GetTempFileName('', 'mdeditor');
+    try
+        EditorPreferences := LoadEditorPreferences(SettingsFileName);
+        AssertEquals(Ord(fmmAskBeforeUpdating), Ord(EditorPreferences.FileMonitoringMode));
+    finally
+        DeleteFile(SettingsFileName);
+    end;
+end;
 
 procedure TPreferencesTests.DefaultsToLoadingLastFile;
 var
@@ -51,6 +67,28 @@ begin
         AssertFalse(EditorPreferences.UseMarkdownChecker);
         AssertEquals('', EditorPreferences.MarkdownCheckerArguments);
         AssertEquals(DefaultExecutableFileName, EditorPreferences.MarkdownCheckerExecutableFileName);
+    finally
+        DeleteFile(SettingsFileName);
+    end;
+end;
+
+procedure TPreferencesTests.PersistsFileMonitoringMode;
+var
+    EditorPreferences: TEditorPreferences;
+    SettingsFileName: string;
+begin
+    SettingsFileName := GetTempFileName('', 'mdeditor');
+    try
+        EditorPreferences := DefaultEditorPreferences;
+        EditorPreferences.FileMonitoringMode := fmmAutomatic;
+        SaveEditorPreferences(SettingsFileName, EditorPreferences);
+        EditorPreferences := LoadEditorPreferences(SettingsFileName);
+        AssertEquals(Ord(fmmAutomatic), Ord(EditorPreferences.FileMonitoringMode));
+
+        EditorPreferences.FileMonitoringMode := fmmDisabled;
+        SaveEditorPreferences(SettingsFileName, EditorPreferences);
+        EditorPreferences := LoadEditorPreferences(SettingsFileName);
+        AssertEquals(Ord(fmmDisabled), Ord(EditorPreferences.FileMonitoringMode));
     finally
         DeleteFile(SettingsFileName);
     end;

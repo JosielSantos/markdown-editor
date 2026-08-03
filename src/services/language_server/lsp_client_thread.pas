@@ -9,7 +9,8 @@ uses
     Classes,
     Lsp_Diagnostics,
     Lsp_Protocol,
-    Process;
+    Process,
+    Windows;
 
 type
     TLspDiagnosticsEvent =
@@ -41,6 +42,7 @@ type
         PendingErrorMessage: string;
         ShutdownRequested: Boolean;
         ShutdownRequestSent: Boolean;
+        WakeEvent: THandle;
         MessageBuffer: TLspMessageBuffer;
         ServerProcess: TProcess;
         procedure DeliverDiagnostics;
@@ -85,8 +87,8 @@ uses
 
 const
     PipeReadSize = 8192;
+    PipePollingMilliseconds = 50;
     GracefulShutdownTimeoutMilliseconds = 1000;
-    WorkerPauseMilliseconds = 10;
 
 constructor TLspClientThread.Create(
     const TheServerExecutableFileName, TheServerArguments: string;
@@ -105,22 +107,25 @@ begin
     OutgoingMessageTransform := TheOutgoingMessageTransform;
     OutgoingMessages := TStringList.Create;
     InitCriticalSection(Lock);
+    WakeEvent := CreateEvent(nil, False, False, nil);
+    if WakeEvent = 0 then
+        RaiseLastOSError;
     Start;
 end;
 
 destructor TLspClientThread.Destroy;
-var
-    ShutdownDeadline: QWord;
 begin
     if not Finished and RequestGracefulShutdown then
-    begin
-        ShutdownDeadline := GetTickCount64 + GracefulShutdownTimeoutMilliseconds;
-        while not Finished and (GetTickCount64 < ShutdownDeadline) do
-            Sleep(WorkerPauseMilliseconds);
-    end;
+        WaitForSingleObject(Handle, GracefulShutdownTimeoutMilliseconds);
     if not Finished then
+    begin
         Terminate;
+        if WakeEvent <> 0 then
+            SetEvent(WakeEvent);
+    end;
     inherited Destroy;
+    if WakeEvent <> 0 then
+        CloseHandle(WakeEvent);
     DoneCriticalSection(Lock);
     OutgoingMessages.Free;
 end;
@@ -135,6 +140,8 @@ begin
     finally
         LeaveCriticalSection(Lock);
     end;
+    if Result and (WakeEvent <> 0) then
+        SetEvent(WakeEvent);
 end;
 
 function TLspClientThread.GracefulShutdownRequested: Boolean;
@@ -179,6 +186,8 @@ begin
     if Assigned(OutgoingMessageTransform) then
         OutgoingJsonText := OutgoingMessageTransform(OutgoingJsonText);
     OutgoingMessages.Add(string(FrameLspMessage(OutgoingJsonText)));
+    if WakeEvent <> 0 then
+        SetEvent(WakeEvent);
 end;
 
 function TLspClientThread.TakeOutgoingMessage(out Message: RawByteString): Boolean;
@@ -365,20 +374,35 @@ begin
 end;
 
 procedure TLspClientThread.Execute;
+var
+    Handles: array[0..1] of THandle;
+    WaitResult: DWORD;
 begin
     ServerProcess := TProcess.Create(nil);
     MessageBuffer := TLspMessageBuffer.Create;
     try
         ConfigureLanguageServerProcess(ServerProcess, ServerExecutableFileName, ServerArguments);
         ServerProcess.Execute;
+        Handles[0] := WakeEvent;
+        Handles[1] := ServerProcess.ProcessHandle;
         QueueJson(BuildInitializeRequest(GetProcessID, ''));
-        while not Terminated and ServerProcess.Running do
+        while not Terminated do
         begin
             BeginGracefulShutdown;
             WriteOutgoingMessages;
             ReadServerOutput;
             CaptureErrorOutput;
-            Sleep(WorkerPauseMilliseconds);
+            if Terminated then
+                Break;
+            WaitResult := WaitForMultipleObjects(Length(Handles), @Handles[0], False, PipePollingMilliseconds);
+            case WaitResult of
+                WAIT_OBJECT_0: Continue;
+                WAIT_OBJECT_0 + 1: Break;
+                WAIT_TIMEOUT: Continue;
+                WAIT_FAILED: RaiseLastOSError;
+            else
+                raise Exception.CreateFmt('Falha inesperada ao aguardar o servidor de linguagem (%d).', [WaitResult]);
+            end;
         end;
         if not Terminated and not GracefulShutdownRequested then
         begin

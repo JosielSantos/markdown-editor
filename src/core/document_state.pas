@@ -21,8 +21,6 @@ type
         SavedContent: string;
     end;
 
-    PDocumentState = ^TDocumentState;
-
 function CreateDocumentState(const FileName: string = ''): TDocumentState;
 function HasContentChanged(const CurrentContent, SavedContent: string): Boolean;
 function HasUnsavedChanges(const CurrentContent: string; const Document: TDocumentState): Boolean;

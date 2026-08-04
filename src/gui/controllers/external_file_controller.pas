@@ -16,13 +16,15 @@ uses
     StdCtrls;
 
 type
-    TDocumentStateChangedEvent = procedure of object;
+    TDocumentStateReader = function: TDocumentState of object;
+    TDocumentStateWriter = procedure(const NewState: TDocumentState) of object;
 
     TExternalFileController = class
     private
         ActiveReadId: QWord;
         CheckAgain: Boolean;
-        Document: PDocumentState;
+        DocumentStateReader: TDocumentStateReader;
+        DocumentStateWriter: TDocumentStateWriter;
         EditorMemo: TMemo;
         FileChanges: TFileChangeController;
         FileReader: TAsyncFileReader;
@@ -35,11 +37,9 @@ type
         ReadTimer: TTimer;
         SignalNextUpdate: Boolean;
         SignalPending: Boolean;
-        StateChangedHandler: TDocumentStateChangedEvent;
         procedure ApplyContent(const Content: string; const Encoding: TDocumentEncoding);
         procedure CancelRead;
         procedure HandleReadResult(const ReadResult: TAsyncFileReadResult);
-        procedure NotifyStateChanged;
         procedure ReadTimerTick(Sender: TObject);
         procedure RequestExternalFile(Sender: TObject);
     public
@@ -47,9 +47,9 @@ type
             TheOwnerForm: TCustomForm;
             TheEditorMemo: TMemo;
             TheLanguageServer: TLanguageServerController;
-            TheDocument: PDocumentState;
-            TheMonitoringMode: TFileMonitoringMode;
-            TheStateChangedHandler: TDocumentStateChangedEvent
+            TheDocumentStateReader: TDocumentStateReader;
+            TheDocumentStateWriter: TDocumentStateWriter;
+            TheMonitoringMode: TFileMonitoringMode
         );
         destructor Destroy; override;
         procedure Configure(TheMonitoringMode: TFileMonitoringMode; const FileName: string);
@@ -73,17 +73,17 @@ constructor TExternalFileController.Create(
     TheOwnerForm: TCustomForm;
     TheEditorMemo: TMemo;
     TheLanguageServer: TLanguageServerController;
-    TheDocument: PDocumentState;
-    TheMonitoringMode: TFileMonitoringMode;
-    TheStateChangedHandler: TDocumentStateChangedEvent
+    TheDocumentStateReader: TDocumentStateReader;
+    TheDocumentStateWriter: TDocumentStateWriter;
+    TheMonitoringMode: TFileMonitoringMode
 );
 begin
     OwnerForm := TheOwnerForm;
     EditorMemo := TheEditorMemo;
     LanguageServer := TheLanguageServer;
-    Document := TheDocument;
+    DocumentStateReader := TheDocumentStateReader;
+    DocumentStateWriter := TheDocumentStateWriter;
     MonitoringMode := TheMonitoringMode;
-    StateChangedHandler := TheStateChangedHandler;
     FileReader := TAsyncFileReader.Create;
     ReadTimer := TTimer.Create(OwnerForm);
     ReadTimer.Enabled := False;
@@ -103,8 +103,10 @@ end;
 procedure TExternalFileController.ApplyContent(const Content: string; const Encoding: TDocumentEncoding);
 var
     CaretPosition: Integer;
+    DocumentState: TDocumentState;
     SelectionLength: Integer;
 begin
+    DocumentState := DocumentStateReader();
     CaretPosition := EditorMemo.SelStart;
     SelectionLength := EditorMemo.SelLength;
     EditorMemo.Lines.BeginUpdate;
@@ -113,17 +115,17 @@ begin
     finally
         EditorMemo.Lines.EndUpdate;
     end;
-    Document^.Encoding := Encoding;
-    Document^.MissingOnDisk := False;
-    Document^.SavedContent := EditorMemo.Text;
+    DocumentState.Encoding := Encoding;
+    DocumentState.MissingOnDisk := False;
+    DocumentState.SavedContent := EditorMemo.Text;
     if CaretPosition > Length(EditorMemo.Text) then
         CaretPosition := Length(EditorMemo.Text);
     EditorMemo.SelStart := CaretPosition;
     if SelectionLength > Length(EditorMemo.Text) - CaretPosition then
         SelectionLength := Length(EditorMemo.Text) - CaretPosition;
     EditorMemo.SelLength := SelectionLength;
-    LanguageServer.DocumentSaved(Document^.FileName, EditorMemo.Text);
-    NotifyStateChanged;
+    LanguageServer.DocumentSaved(DocumentState.FileName, EditorMemo.Text);
+    DocumentStateWriter(DocumentState);
 end;
 
 procedure TExternalFileController.CancelRead;
@@ -141,11 +143,13 @@ end;
 procedure TExternalFileController.HandleReadResult(const ReadResult: TAsyncFileReadResult);
 var
     Choice: Integer;
+    DocumentState: TDocumentState;
     ForceUpdate: Boolean;
     PromptText: string;
     SignalUpdate: Boolean;
 begin
-    if not SameFileName(ReadResult.FileName, Document^.FileName) then
+    DocumentState := DocumentStateReader();
+    if not SameFileName(ReadResult.FileName, DocumentState.FileName) then
     begin
         CancelRead;
         Exit;
@@ -161,10 +165,10 @@ begin
     SignalPending := False;
     if ReadResult.Status = afrsMissing then
     begin
-        if Document^.MissingOnDisk then
+        if DocumentState.MissingOnDisk then
             Exit;
-        Document^.MissingOnDisk := True;
-        NotifyStateChanged;
+        DocumentState.MissingOnDisk := True;
+        DocumentStateWriter(DocumentState);
         LCLIntf.MessageBox(
             OwnerForm.Handle,
             'O arquivo aberto não existe mais. O conteúdo foi mantido no editor.',
@@ -173,11 +177,11 @@ begin
         );
         Exit;
     end;
-    Document^.MissingOnDisk := False;
+    DocumentState.MissingOnDisk := False;
     if not ReadResult.Changed then
     begin
-        Document^.Encoding := ReadResult.Encoding;
-        NotifyStateChanged;
+        DocumentState.Encoding := ReadResult.Encoding;
+        DocumentStateWriter(DocumentState);
         Exit;
     end;
     if ForceUpdate or (MonitoringMode = fmmAutomatic) then
@@ -185,7 +189,7 @@ begin
     else
     begin
         PromptText := 'O arquivo foi alterado por outro programa. Deseja atualizar o editor?';
-        if HasContentChanged(EditorMemo.Text, Document^.SavedContent) then
+        if HasContentChanged(EditorMemo.Text, DocumentState.SavedContent) then
             PromptText :=
                 'O arquivo foi alterado por outro programa. Deseja recarregá-lo e descartar as alterações deste editor?';
         Choice :=
@@ -204,9 +208,9 @@ begin
     end
     else
     begin
-        Document^.Encoding := ReadResult.Encoding;
-        Document^.SavedContent := ReadResult.Content;
-        NotifyStateChanged;
+        DocumentState.Encoding := ReadResult.Encoding;
+        DocumentState.SavedContent := ReadResult.Content;
+        DocumentStateWriter(DocumentState);
     end;
 end;
 
@@ -235,6 +239,7 @@ end;
 
 procedure TExternalFileController.RequestExternalFile(Sender: TObject);
 var
+    DocumentState: TDocumentState;
     ForceUpdate: Boolean;
     SignalUpdate: Boolean;
 begin
@@ -242,7 +247,8 @@ begin
     SignalUpdate := SignalNextUpdate;
     ForceNextCheck := False;
     SignalNextUpdate := False;
-    if ((MonitoringMode = fmmDisabled) and not ForceUpdate) or (Document^.FileName = '') then
+    DocumentState := DocumentStateReader();
+    if ((MonitoringMode = fmmDisabled) and not ForceUpdate) or (DocumentState.FileName = '') then
         Exit;
     ForcePending := ForcePending or ForceUpdate;
     SignalPending := SignalPending or SignalUpdate;
@@ -251,7 +257,7 @@ begin
         CheckAgain := True;
         Exit;
     end;
-    ActiveReadId := FileReader.Request(Document^.FileName, Document^.SavedContent);
+    ActiveReadId := FileReader.Request(DocumentState.FileName, DocumentState.SavedContent);
     ReadTimer.Enabled := True;
 end;
 
@@ -263,12 +269,6 @@ begin
         FileChanges.Stop
     else
         FileChanges.Watch(FileName);
-end;
-
-procedure TExternalFileController.NotifyStateChanged;
-begin
-    if Assigned(StateChangedHandler) then
-        StateChangedHandler;
 end;
 
 procedure TExternalFileController.Refresh;

@@ -37,6 +37,7 @@ type
         procedure ExportHtml(Sender: TObject);
         procedure ExportHtmlAs(Sender: TObject);
         procedure ExportHtmlToFile(const HtmlFileName: string);
+        function GetDocumentState: TDocumentState;
         procedure GoToLine(Sender: TObject);
         function HandleUnsavedChanges: Boolean;
         procedure InsertLink(Sender: TObject);
@@ -52,6 +53,7 @@ type
         function SaveDocumentTo(const FileName: string; const Encoding: TDocumentEncoding): Boolean;
         procedure SaveMarkdown(Sender: TObject);
         procedure SaveMarkdownAs(Sender: TObject);
+        procedure SetDocumentState(const NewState: TDocumentState);
         procedure ShowErrorMessage(const DialogTitle, ErrorMessage: string);
         procedure ShowOptions(Sender: TObject);
         procedure ShowProblems(Sender: TObject);
@@ -153,9 +155,9 @@ begin
             Self,
             EditorMemo,
             LanguageServer,
-            @Document,
-            EditorPreferences.FileMonitoringMode,
-            @UpdateWindowTitle
+            @GetDocumentState,
+            @SetDocumentState,
+            EditorPreferences.FileMonitoringMode
         );
     OnCloseQuery := @CanCloseEditor;
     UpdateWindowTitle;
@@ -174,6 +176,17 @@ end;
 procedure TEditorForm.InitializeHtmlDocumentTemplate(const HtmlTemplate: string);
 begin
     HtmlDocumentTemplate := HtmlTemplate;
+end;
+
+function TEditorForm.GetDocumentState: TDocumentState;
+begin
+    Result := Document;
+end;
+
+procedure TEditorForm.SetDocumentState(const NewState: TDocumentState);
+begin
+    Document := NewState;
+    UpdateWindowTitle;
 end;
 
 procedure TEditorForm.CanCloseEditor(Sender: TObject; var CanClose: Boolean);

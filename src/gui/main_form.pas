@@ -8,66 +8,47 @@ interface
 uses
     Classes,
     Document_State,
-    Editor_Preferences,
-    External_File_Controller,
+    Editor_Menu,
     Forms,
-    Language_Server_Controller,
     Markdown_Memo,
-    Options_Controller,
-    Preferences_Ini,
-    Recent_Files_Controller,
-    Session_Controller;
+    Menus;
 
 type
+    TUnsavedChangesChoice = (uccSave, uccDiscard, uccCancel);
+
     TEditorForm = class(TForm)
     private
-        Document: TDocumentState;
-        EditorPreferences: TEditorPreferences;
         EditorMemo: TMarkdownMemo;
-        ExternalFiles: TExternalFileController;
-        HtmlDocumentTemplate: string;
-        LanguageServer: TLanguageServerController;
-        RecentFiles: TRecentFilesController;
-        OptionsController: TOptionsController;
-        Session: TSessionController;
-        procedure CanCloseEditor(Sender: TObject; var CanClose: Boolean);
+        RecentFilesMenu: TMenuItem;
         procedure CreateEditor;
-        procedure CreateMenuBar;
-        procedure EditorChanged(Sender: TObject);
         procedure ExitEditor(Sender: TObject);
-        procedure ExportHtml(Sender: TObject);
-        procedure ExportHtmlAs(Sender: TObject);
-        procedure ExportHtmlToFile(const HtmlFileName: string);
-        function GetDocumentState: TDocumentState;
+        function GetDocumentText: string;
         procedure GoToLine(Sender: TObject);
-        function HandleUnsavedChanges: Boolean;
         procedure InsertLink(Sender: TObject);
-        procedure MarkDocumentSaved;
-        procedure NavigateToDiagnostic(LineNumber: Integer);
-        procedure NewDocument(Sender: TObject);
-        procedure OpenMarkdown(Sender: TObject);
-        procedure OpenRecentMarkdown(const FileName: string);
-        procedure RefreshDocument(Sender: TObject);
-        function LoadMarkdownDocumentSilently(const FileName: string): Boolean;
-        function SaveCurrentDocument: Boolean;
-        function SaveDocumentAs: Boolean;
-        function SaveDocumentTo(const FileName: string; const Encoding: TDocumentEncoding): Boolean;
-        procedure SaveMarkdown(Sender: TObject);
-        procedure SaveMarkdownAs(Sender: TObject);
-        procedure SetDocumentState(const NewState: TDocumentState);
-        procedure ShowErrorMessage(const DialogTitle, ErrorMessage: string);
-        procedure ShowOptions(Sender: TObject);
-        procedure ShowProblems(Sender: TObject);
-        procedure ShowPreview(Sender: TObject);
-        function TryLoadMarkdownDocument(const FileName: string; ReportErrors: Boolean): Boolean;
-        procedure UpdateWindowTitle;
+        procedure SetDocumentText(const Value: string);
     public
         constructor Create(TheOwner: TComponent); override;
-        destructor Destroy; override;
-        procedure InitializeMarkdownDocument(const FileName: string);
-        procedure InitializeHtmlDocumentTemplate(const HtmlTemplate: string);
-        function LoadMarkdownDocument(const FileName: string): Boolean;
-        procedure RestoreLastSession;
+        procedure BindActions(
+            const ApplicationActions: TEditorMenuActions;
+            DocumentChangedHandler: TNotifyEvent;
+            CloseQueryHandler: TCloseQueryEvent
+        );
+        function ConfirmUnsavedChanges: TUnsavedChangesChoice;
+        function SelectHtmlExportFile(const MarkdownFileName: string; out HtmlFileName: string): Boolean;
+        function SelectMarkdownFileToOpen(out FileName: string): Boolean;
+        function SelectMarkdownFileToSave(
+            const FileName: string;
+            const Encoding: TDocumentEncoding;
+            out SelectedFileName: string;
+            out SelectedEncoding: TDocumentEncoding
+        ): Boolean;
+        procedure ShowErrorMessage(const DialogTitle, ErrorMessage: string);
+        procedure ShowMarkdownCheckerDisabled;
+        procedure ShowPreviewHtml(const Html: string);
+        procedure UpdateDocumentTitle(const FileName: string; Modified: Boolean);
+        property DocumentText: string read GetDocumentText write SetDocumentText;
+        property EditorControl: TMarkdownMemo read EditorMemo;
+        property RecentFilesMenuItem: TMenuItem read RecentFilesMenu;
     end;
 
 var
@@ -76,24 +57,30 @@ var
 implementation
 
 uses
+    Accessibility,
     Controls,
     Dialogs,
-    Accessibility,
-    Editor_Menu,
-    Files,
     Go_To_Line,
-    Html_Export,
     Html_Export_Dialog,
     Insert_Link,
     LCLIntf,
     LCLType,
     Link,
     Markdown_Save_Dialog,
-    Menus,
     Preview_Form,
-    Editor,
     StdCtrls,
     SysUtils;
+
+constructor TEditorForm.Create(TheOwner: TComponent);
+begin
+    inherited CreateNew(TheOwner, 1);
+    Caption := 'Markdown Editor';
+    Position := poScreenCenter;
+    Width := 900;
+    Height := 650;
+    CreateEditor;
+    UpdateDocumentTitle('', False);
+end;
 
 procedure TEditorForm.CreateEditor;
 begin
@@ -108,130 +95,44 @@ begin
     EditorMemo.AccessibleDescription := 'Digite Markdown. Pressione F9 para abrir a visualização.';
     EditorMemo.AccessibleRole := larTextEditorMultiline;
     SetControlAccessibleName(EditorMemo, 'Editor de texto Markdown');
-    EditorMemo.OnChange := @EditorChanged;
     ActiveControl := EditorMemo;
 end;
 
-procedure TEditorForm.CreateMenuBar;
+procedure TEditorForm.BindActions(
+    const ApplicationActions: TEditorMenuActions;
+    DocumentChangedHandler: TNotifyEvent;
+    CloseQueryHandler: TCloseQueryEvent
+);
 var
     Actions: TEditorMenuActions;
-    RecentFilesMenu: TMenuItem;
 begin
-    Actions.NewDocument := @NewDocument;
-    Actions.OpenDocument := @OpenMarkdown;
-    Actions.RefreshDocument := @RefreshDocument;
-    Actions.SaveDocument := @SaveMarkdown;
-    Actions.SaveDocumentAs := @SaveMarkdownAs;
-    Actions.ExportHtml := @ExportHtml;
-    Actions.ExportHtmlAs := @ExportHtmlAs;
+    Actions := ApplicationActions;
     Actions.ExitEditor := @ExitEditor;
     Actions.GoToLine := @GoToLine;
     Actions.InsertLink := @InsertLink;
-    Actions.ShowOptions := @ShowOptions;
-    Actions.ShowProblems := @ShowProblems;
-    Actions.ShowPreview := @ShowPreview;
     Menu := BuildEditorMenu(Self, Actions, RecentFilesMenu);
-    RecentFiles := TRecentFilesController.Create(Self, RecentFilesMenu, @OpenRecentMarkdown, DefaultSettingsFileName);
+    EditorMemo.OnChange := DocumentChangedHandler;
+    OnCloseQuery := CloseQueryHandler;
 end;
 
-constructor TEditorForm.Create(TheOwner: TComponent);
+function TEditorForm.GetDocumentText: string;
 begin
-    inherited CreateNew(TheOwner, 1);
-    Caption := 'Markdown Editor';
-    Position := poScreenCenter;
-    Width := 900;
-    Height := 650;
-    EditorPreferences := LoadEditorPreferences(DefaultSettingsFileName, DefaultLanguageServerExecutableFileName);
-    CreateMenuBar;
-    CreateEditor;
-    LanguageServer := TLanguageServerController.Create(Self, EditorMemo, @NavigateToDiagnostic);
-    OptionsController := TOptionsController.Create(Self, EditorMemo, LanguageServer, DefaultSettingsFileName);
-    if EditorPreferences.UseMarkdownChecker then
-        LanguageServer
-            .Start(EditorPreferences.MarkdownCheckerExecutableFileName, EditorPreferences.MarkdownCheckerArguments);
-    Session := TSessionController.Create(Self, EditorMemo, @LoadMarkdownDocumentSilently, DefaultSettingsFileName);
-    Document := CreateDocumentState;
-    ExternalFiles :=
-        TExternalFileController.Create(
-            Self,
-            EditorMemo,
-            LanguageServer,
-            @GetDocumentState,
-            @SetDocumentState,
-            EditorPreferences.FileMonitoringMode
-        );
-    OnCloseQuery := @CanCloseEditor;
-    UpdateWindowTitle;
+    Result := EditorMemo.Text;
 end;
 
-destructor TEditorForm.Destroy;
+procedure TEditorForm.SetDocumentText(const Value: string);
 begin
-    ExternalFiles.Free;
-    OptionsController.Free;
-    LanguageServer.Free;
-    Session.Free;
-    RecentFiles.Free;
-    inherited Destroy;
-end;
-
-procedure TEditorForm.InitializeHtmlDocumentTemplate(const HtmlTemplate: string);
-begin
-    HtmlDocumentTemplate := HtmlTemplate;
-end;
-
-function TEditorForm.GetDocumentState: TDocumentState;
-begin
-    Result := Document;
-end;
-
-procedure TEditorForm.SetDocumentState(const NewState: TDocumentState);
-begin
-    Document := NewState;
-    UpdateWindowTitle;
-end;
-
-procedure TEditorForm.CanCloseEditor(Sender: TObject; var CanClose: Boolean);
-begin
-    CanClose := HandleUnsavedChanges;
-    if CanClose then
-        Session.Persist(Document.FileName);
-end;
-
-procedure TEditorForm.EditorChanged(Sender: TObject);
-begin
-    LanguageServer.DocumentChanged(EditorMemo.Text);
-    UpdateWindowTitle;
+    EditorMemo.Lines.BeginUpdate;
+    try
+        EditorMemo.Text := Value;
+    finally
+        EditorMemo.Lines.EndUpdate;
+    end;
 end;
 
 procedure TEditorForm.ExitEditor(Sender: TObject);
 begin
     Close;
-end;
-
-procedure TEditorForm.ExportHtml(Sender: TObject);
-begin
-    if Document.FileName = '' then
-        ExportHtmlAs(Sender)
-    else
-        ExportHtmlToFile(HtmlExportFileName(Document.FileName));
-end;
-
-procedure TEditorForm.ExportHtmlAs(Sender: TObject);
-var
-    HtmlFileName: string;
-begin
-    if ChooseHtmlExportFile(Self, Document.FileName, HtmlFileName) then
-        ExportHtmlToFile(HtmlFileName);
-end;
-
-procedure TEditorForm.ExportHtmlToFile(const HtmlFileName: string);
-begin
-    try
-        ExportMarkdownToHtmlFile(EditorMemo.Text, HtmlDocumentTemplate, HtmlFileName);
-    except
-        on Error: Exception do
-            ShowErrorMessage('Erro ao exportar HTML', Error.Message);
-    end;
 end;
 
 procedure TEditorForm.GoToLine(Sender: TObject);
@@ -240,28 +141,7 @@ var
 begin
     if not ChooseLineNumber(Self, EditorMemo.CaretPos.Y + 1, EditorMemo.Lines.Count, SelectedLine) then
         Exit;
-    Session.PositionCursorAtLine(SelectedLine);
-end;
-
-function TEditorForm.HandleUnsavedChanges: Boolean;
-var
-    Choice: Integer;
-begin
-    if not HasUnsavedChanges(EditorMemo.Text, Document) then
-        Exit(True);
-    Choice :=
-        LCLIntf.MessageBox(
-            Handle,
-            'Deseja salvar as alterações antes de continuar?',
-            'Alterações não salvas',
-            MB_ICONQUESTION or MB_YESNOCANCEL or MB_DEFBUTTON1
-        );
-    case Choice of
-        IDYES: Result := SaveCurrentDocument;
-        IDNO: Result := True;
-    else
-        Result := False;
-    end;
+    EditorMemo.PositionCursorAtLine(SelectedLine);
 end;
 
 procedure TEditorForm.InsertLink(Sender: TObject);
@@ -275,87 +155,30 @@ begin
     EditorMemo.SetFocus;
 end;
 
-procedure TEditorForm.NewDocument(Sender: TObject);
-begin
-    if not HandleUnsavedChanges then
-        Exit;
-    Session.RememberFilePosition(Document.FileName);
-    LanguageServer.CloseDocument;
-    ExternalFiles.Stop;
-    EditorMemo.Clear;
-    Document := CreateDocumentState;
-    MarkDocumentSaved;
-end;
-
-procedure TEditorForm.InitializeMarkdownDocument(const FileName: string);
-begin
-    if FileExists(FileName) then
-    begin
-        LoadMarkdownDocument(FileName);
-        Exit;
-    end;
-    LanguageServer.CloseDocument;
-    EditorMemo.Clear;
-    Document := CreateDocumentState(ExpandFileName(FileName));
-    MarkDocumentSaved;
-    ExternalFiles.Watch(Document.FileName);
-    LanguageServer.OpenDocument(Document.FileName, EditorMemo.Text);
-end;
-
-function TEditorForm.LoadMarkdownDocument(const FileName: string): Boolean;
-begin
-    Result := TryLoadMarkdownDocument(FileName, True);
-end;
-
-function TEditorForm.LoadMarkdownDocumentSilently(const FileName: string): Boolean;
-begin
-    Result := TryLoadMarkdownDocument(FileName, False);
-end;
-
-function TEditorForm.TryLoadMarkdownDocument(const FileName: string; ReportErrors: Boolean): Boolean;
+function TEditorForm.ConfirmUnsavedChanges: TUnsavedChangesChoice;
 var
-    LoadedEncoding: TDocumentEncoding;
-    ResolvedFileName: string;
+    Choice: Integer;
 begin
-    Result := False;
-    ResolvedFileName := ExpandFileName(FileName);
-    Session.RememberFilePosition(Document.FileName);
-    try
-        LanguageServer.CloseDocument;
-        EditorMemo.Text := ReadTextFile(ResolvedFileName, LoadedEncoding);
-        Document.FileName := ResolvedFileName;
-        Document.Encoding := LoadedEncoding;
-        Document.MissingOnDisk := False;
-        MarkDocumentSaved;
-        RecentFiles.Remember(Document.FileName);
-        Session.RestoreFilePosition(Document.FileName);
-        ExternalFiles.Watch(Document.FileName);
-        LanguageServer.OpenDocument(Document.FileName, EditorMemo.Text);
-        Result := True;
-    except
-        on Error: Exception do
-            if ReportErrors then
-                ShowErrorMessage('Erro ao abrir arquivo', Error.Message);
+    Choice :=
+        LCLIntf.MessageBox(
+            Handle,
+            'Deseja salvar as alterações antes de continuar?',
+            'Alterações não salvas',
+            MB_ICONQUESTION or MB_YESNOCANCEL or MB_DEFBUTTON1
+        );
+    case Choice of
+        IDYES: Result := uccSave;
+        IDNO: Result := uccDiscard;
+    else
+        Result := uccCancel;
     end;
 end;
 
-procedure TEditorForm.MarkDocumentSaved;
-begin
-    Document.SavedContent := EditorMemo.Text;
-    UpdateWindowTitle;
-end;
-
-procedure TEditorForm.NavigateToDiagnostic(LineNumber: Integer);
-begin
-    Session.PositionCursorAtLine(LineNumber);
-end;
-
-procedure TEditorForm.OpenMarkdown(Sender: TObject);
+function TEditorForm.SelectMarkdownFileToOpen(out FileName: string): Boolean;
 var
     OpenDialog: TOpenDialog;
 begin
-    if not HandleUnsavedChanges then
-        Exit;
+    Result := False;
     OpenDialog := TOpenDialog.Create(Self);
     try
         OpenDialog.Title := 'Abrir arquivo Markdown';
@@ -363,80 +186,26 @@ begin
         OpenDialog.Options := [ofFileMustExist, ofPathMustExist, ofEnableSizing];
         if not OpenDialog.Execute then
             Exit;
-        LoadMarkdownDocument(OpenDialog.FileName);
+        FileName := OpenDialog.FileName;
+        Result := True;
     finally
         OpenDialog.Free;
     end;
 end;
 
-procedure TEditorForm.OpenRecentMarkdown(const FileName: string);
+function TEditorForm.SelectMarkdownFileToSave(
+    const FileName: string;
+    const Encoding: TDocumentEncoding;
+    out SelectedFileName: string;
+    out SelectedEncoding: TDocumentEncoding
+): Boolean;
 begin
-    if not HandleUnsavedChanges then
-        Exit;
-    LoadMarkdownDocument(FileName);
+    Result := ChooseMarkdownSaveFile(Self, FileName, Encoding, SelectedFileName, SelectedEncoding);
 end;
 
-procedure TEditorForm.RefreshDocument(Sender: TObject);
+function TEditorForm.SelectHtmlExportFile(const MarkdownFileName: string; out HtmlFileName: string): Boolean;
 begin
-    ExternalFiles.Refresh;
-end;
-
-procedure TEditorForm.RestoreLastSession;
-begin
-    if EditorPreferences.LoadLastFile then
-    begin
-        RecentFiles.RemoveMissingFiles;
-        Session.Restore;
-    end;
-end;
-
-function TEditorForm.SaveCurrentDocument: Boolean;
-begin
-    if Document.FileName = '' then
-        Exit(SaveDocumentAs);
-    Result := SaveDocumentTo(Document.FileName, Document.Encoding);
-end;
-
-function TEditorForm.SaveDocumentAs: Boolean;
-var
-    SelectedEncoding: TDocumentEncoding;
-    SelectedFileName: string;
-begin
-    Result := False;
-    if not ChooseMarkdownSaveFile(Self, Document.FileName, Document.Encoding, SelectedFileName, SelectedEncoding) then
-        Exit;
-    Result := SaveDocumentTo(SelectedFileName, SelectedEncoding);
-end;
-
-function TEditorForm.SaveDocumentTo(const FileName: string; const Encoding: TDocumentEncoding): Boolean;
-begin
-    Result := False;
-    try
-        WriteTextFile(FileName, EditorMemo.Text, Encoding);
-        Document.FileName := FileName;
-        Document.Encoding := Encoding;
-        Document.MissingOnDisk := False;
-        MarkDocumentSaved;
-        RecentFiles.Remember(Document.FileName);
-        Session.RememberFilePosition(Document.FileName);
-        ExternalFiles.Watch(Document.FileName);
-        LanguageServer.DocumentSaved(Document.FileName, EditorMemo.Text);
-        Result := True;
-    except
-        on Error: Exception do
-            ShowErrorMessage('Erro ao salvar arquivo', Error.Message);
-    end;
-end;
-
-procedure TEditorForm.SaveMarkdown(Sender: TObject);
-begin
-    SaveCurrentDocument;
-end;
-
-procedure TEditorForm.SaveMarkdownAs(Sender: TObject);
-begin
-    Session.RememberFilePosition(Document.FileName);
-    SaveDocumentAs;
+    Result := ChooseHtmlExportFile(Self, MarkdownFileName, HtmlFileName);
 end;
 
 procedure TEditorForm.ShowErrorMessage(const DialogTitle, ErrorMessage: string);
@@ -444,48 +213,37 @@ begin
     LCLIntf.MessageBox(Handle, PChar(ErrorMessage), PChar(DialogTitle), MB_OK or MB_ICONERROR);
 end;
 
-procedure TEditorForm.ShowOptions(Sender: TObject);
+procedure TEditorForm.ShowMarkdownCheckerDisabled;
 begin
-    if OptionsController.Edit(EditorPreferences, Document.FileName) then
-        ExternalFiles.Configure(EditorPreferences.FileMonitoringMode, Document.FileName);
+    LCLIntf.MessageBox(
+        Handle,
+        'Habilite o verificador de Markdown nas opções para consultar a lista de problemas.',
+        'Verificador de Markdown desabilitado',
+        MB_OK or MB_ICONWARNING
+    );
 end;
 
-procedure TEditorForm.ShowProblems(Sender: TObject);
-begin
-    if not EditorPreferences.UseMarkdownChecker then
-    begin
-        LCLIntf.MessageBox(
-            Handle,
-            'Habilite o verificador de Markdown nas opções para consultar a lista de problemas.',
-            'Verificador de Markdown desabilitado',
-            MB_OK or MB_ICONWARNING
-        );
-        Exit;
-    end;
-    LanguageServer.ShowProblems;
-end;
-
-procedure TEditorForm.ShowPreview(Sender: TObject);
+procedure TEditorForm.ShowPreviewHtml(const Html: string);
 var
     Preview: TPreviewForm;
 begin
     Preview := TPreviewForm.Create(Self);
     try
-        Preview.ShowMarkdown(EditorMemo.Text, HtmlDocumentTemplate);
+        Preview.ShowHtml(Html);
     finally
         Preview.Free;
     end;
 end;
 
-procedure TEditorForm.UpdateWindowTitle;
+procedure TEditorForm.UpdateDocumentTitle(const FileName: string; Modified: Boolean);
 var
     DocumentName: string;
 begin
-    if Document.FileName = '' then
+    if FileName = '' then
         DocumentName := 'Sem título'
     else
-        DocumentName := ExtractFileName(Document.FileName);
-    if HasUnsavedChanges(EditorMemo.Text, Document) then
+        DocumentName := ExtractFileName(FileName);
+    if Modified then
         DocumentName := DocumentName + ' *';
     Caption := DocumentName + ' — Markdown Editor';
 end;

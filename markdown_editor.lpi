@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="41">
+    <Units Count="43">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -271,6 +271,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Editor_Preferences"/>
       </Unit40>
+      <Unit41>
+        <Filename Value="src/app/editor_coordinator.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Editor_Coordinator"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="src/gui/controllers/document_controller.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Document_Controller"/>
+      </Unit42>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

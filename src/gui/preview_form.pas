@@ -55,7 +55,7 @@ type
         procedure WMMoving(var Message: TMessage); message WM_MOVING;
     public
         constructor Create(TheOwner: TComponent); override;
-        procedure ShowMarkdown(const Markdown, HtmlTemplate: string);
+        procedure ShowHtml(const Html: string);
     end;
 
 implementation
@@ -65,7 +65,6 @@ uses
     LCLIntf,
     LCLType,
     Link_Navigation,
-    Renderer,
     SysUtils,
     uWVCoreWebView2Args,
     uWVCoreWebView2WebResourceRequest,
@@ -324,9 +323,9 @@ begin
         Browser.NotifyParentWindowPositionChanged;
 end;
 
-procedure TPreviewForm.ShowMarkdown(const Markdown, HtmlTemplate: string);
+procedure TPreviewForm.ShowHtml(const Html: string);
 begin
-    HtmlDocument := MarkdownToHtml(Markdown, HtmlTemplate);
+    HtmlDocument := Html;
     ShowModal;
 end;
 

@@ -18,6 +18,8 @@ type
         procedure RendersGitHubExtensions;
         procedure RendersNestedLists;
         procedure RendersTaskLists;
+        procedure IgnoresFrontMatter;
+        procedure PreservesOpeningThematicBreakWithoutClosingDelimiter;
         procedure SanitizesUnsafeHtml;
     end;
 
@@ -95,6 +97,27 @@ begin
     Html := MarkdownToHtml('* [] Tarefa1' + LineEnding + '* [x] Tarefa2');
     AssertHtmlContains('tarefa desmarcada', Html, '<li><input type="checkbox" disabled> Tarefa1</li>');
     AssertHtmlContains('tarefa marcada', Html, '<li><input type="checkbox" checked disabled> Tarefa2</li>');
+end;
+
+procedure TMarkdownRendererTests.IgnoresFrontMatter;
+var
+    Html: string;
+begin
+    Html :=
+        MarkdownToHtml(
+            '---' + #10 + 'title: Hidden metadata' + #10 + 'author: Hidden person' + #10 + '---' + #10 + '# Content'
+        );
+    AssertFalse('front matter title', ContainsStr(Html, 'Hidden metadata'));
+    AssertFalse('front matter author', ContainsStr(Html, 'Hidden person'));
+    AssertHtmlContains('content after front matter', Html, '<h1 id="content">Content</h1>');
+end;
+
+procedure TMarkdownRendererTests.PreservesOpeningThematicBreakWithoutClosingDelimiter;
+var
+    Html: string;
+begin
+    Html := MarkdownToHtml('---' + LineEnding + 'Visible text');
+    AssertHtmlContains('content without complete front matter', Html, 'Visible text');
 end;
 
 procedure TMarkdownRendererTests.SanitizesUnsafeHtml;

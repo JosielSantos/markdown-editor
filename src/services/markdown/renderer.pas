@@ -12,6 +12,7 @@ implementation
 uses
     Heading_Anchors,
     MarkdownCommonMark,
+    StrUtils,
     SysUtils;
 
 const
@@ -31,6 +32,23 @@ const
             + 'margin-left:0;padding-left:1rem}a{color:#0645ad}</style></head><body>'
             + LineEnding;
 
+function WithoutFrontMatter(const Markdown: string): string;
+var
+    ClosingDelimiter: SizeInt;
+begin
+    Result := StringReplace(Markdown, #13#10, #10, [rfReplaceAll]);
+    Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
+
+    if Copy(Result, 1, 4) <> '---' + #10 then
+        Exit;
+
+    ClosingDelimiter := PosEx(#10 + '---' + #10, Result, 4);
+    if ClosingDelimiter > 0 then
+        Result := Copy(Result, ClosingDelimiter + 5, MaxInt)
+    else if RightStr(Result, 4) = #10 + '---' then
+        Result := '';
+end;
+
 function RenderTaskListItems(const Html: string): string;
 begin
     Result := StringReplace(Html, '<li>[] ', '<li><input type="checkbox" disabled> ', [rfReplaceAll]);
@@ -46,7 +64,7 @@ end;
 
 function RenderMarkdownFragment(const Markdown: string): string;
 begin
-    Result := AddHeadingAnchors(RenderTaskListItems(TCommonMarkEngine.Process(Markdown, True)));
+    Result := AddHeadingAnchors(RenderTaskListItems(TCommonMarkEngine.Process(WithoutFrontMatter(Markdown), True)));
 end;
 
 function MarkdownToHtml(const Markdown: string): string;

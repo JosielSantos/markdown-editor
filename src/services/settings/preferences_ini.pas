@@ -1,22 +1,13 @@
-unit Preferences;
+unit Preferences_Ini;
 
 {$MODE objfpc}
 {$H+}
 
 interface
 
-type
-    TFileMonitoringMode = (fmmAutomatic, fmmAskBeforeUpdating, fmmDisabled);
+uses
+    Editor_Preferences;
 
-    TEditorPreferences = record
-        FileMonitoringMode: TFileMonitoringMode;
-        LoadLastFile: Boolean;
-        MarkdownCheckerArguments: string;
-        MarkdownCheckerExecutableFileName: string;
-        UseMarkdownChecker: Boolean;
-    end;
-
-function DefaultEditorPreferences(const DefaultMarkdownCheckerExecutableFileName: string = ''): TEditorPreferences;
 function LoadEditorPreferences(
     const SettingsFileName: string;
     const DefaultMarkdownCheckerExecutableFileName: string = ''
@@ -59,15 +50,6 @@ begin
         Result := fmmDisabled
     else
         Result := fmmAskBeforeUpdating;
-end;
-
-function DefaultEditorPreferences(const DefaultMarkdownCheckerExecutableFileName: string): TEditorPreferences;
-begin
-    Result.FileMonitoringMode := fmmAskBeforeUpdating;
-    Result.LoadLastFile := True;
-    Result.MarkdownCheckerArguments := '';
-    Result.MarkdownCheckerExecutableFileName := DefaultMarkdownCheckerExecutableFileName;
-    Result.UseMarkdownChecker := False;
 end;
 
 function LoadEditorPreferences(

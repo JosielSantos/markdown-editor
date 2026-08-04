@@ -12,7 +12,7 @@ uses
     File_Change_Controller,
     Forms,
     Language_Server_Controller,
-    Preferences,
+    Editor_Preferences,
     StdCtrls;
 
 type

@@ -7,7 +7,7 @@ interface
 
 uses
     Classes,
-    Preferences;
+    Editor_Preferences;
 
 type
     TOptionsApplyFailureEvent = procedure(Sender: TObject; const ErrorMessage: string) of object;

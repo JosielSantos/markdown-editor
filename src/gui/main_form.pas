@@ -8,11 +8,12 @@ interface
 uses
     Classes,
     Document_State,
+    Editor_Preferences,
     External_File_Controller,
     Forms,
     Language_Server_Controller,
     Options_Controller,
-    Preferences,
+    Preferences_Ini,
     Recent_Files_Controller,
     Session_Controller,
     StdCtrls;

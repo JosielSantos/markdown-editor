@@ -9,7 +9,7 @@ uses
     Classes,
     ComCtrls,
     Controls,
-    Preferences,
+    Editor_Preferences,
     StdCtrls;
 
 type

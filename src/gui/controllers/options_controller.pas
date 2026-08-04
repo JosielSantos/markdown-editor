@@ -8,9 +8,10 @@ interface
 uses
     Classes,
     Forms,
+    Editor_Preferences,
     Language_Server_Controller,
     Options,
-    Preferences,
+    Preferences_Ini,
     StdCtrls;
 
 type

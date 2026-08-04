@@ -23,7 +23,8 @@ type
 implementation
 
 uses
-    Preferences,
+    Editor_Preferences,
+    Preferences_Ini,
     SysUtils;
 
 procedure TPreferencesTests.DefaultsToAskingBeforeUpdatingOpenFile;

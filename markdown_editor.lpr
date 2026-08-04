@@ -3,11 +3,14 @@ program MarkdownEditor;
 {$MODE objfpc}
 {$H+}
 
+{$R resources/markdown_editor_resources.rc}
+
 uses
     Command_Line,
     File_Association,
     Interfaces,
     Forms,
+    Html_Document_Template,
     LCLIntf,
     LCLType,
     Main_Form,
@@ -48,6 +51,7 @@ begin
             Exit;
     end;
     Application.CreateForm(TEditorForm, EditorForm);
+    EditorForm.InitializeHtmlDocumentTemplate(LoadDefaultHtmlDocumentTemplate);
     if CommandLineArguments.MarkdownFileName <> '' then
         EditorForm.InitializeMarkdownDocument(CommandLineArguments.MarkdownFileName)
     else

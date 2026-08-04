@@ -24,6 +24,7 @@ type
         EditorPreferences: TEditorPreferences;
         EditorMemo: TMemo;
         ExternalFiles: TExternalFileController;
+        HtmlDocumentTemplate: string;
         LanguageServer: TLanguageServerController;
         RecentFiles: TRecentFilesController;
         OptionsController: TOptionsController;
@@ -61,6 +62,7 @@ type
         constructor Create(TheOwner: TComponent); override;
         destructor Destroy; override;
         procedure InitializeMarkdownDocument(const FileName: string);
+        procedure InitializeHtmlDocumentTemplate(const HtmlTemplate: string);
         function LoadMarkdownDocument(const FileName: string): Boolean;
         procedure RestoreLastSession;
     end;
@@ -169,6 +171,11 @@ begin
     inherited Destroy;
 end;
 
+procedure TEditorForm.InitializeHtmlDocumentTemplate(const HtmlTemplate: string);
+begin
+    HtmlDocumentTemplate := HtmlTemplate;
+end;
+
 procedure TEditorForm.CanCloseEditor(Sender: TObject; var CanClose: Boolean);
 begin
     CanClose := HandleUnsavedChanges;
@@ -206,7 +213,7 @@ end;
 procedure TEditorForm.ExportHtmlToFile(const HtmlFileName: string);
 begin
     try
-        ExportMarkdownToHtmlFile(EditorMemo.Text, HtmlFileName);
+        ExportMarkdownToHtmlFile(EditorMemo.Text, HtmlDocumentTemplate, HtmlFileName);
     except
         on Error: Exception do
             ShowErrorMessage('Erro ao exportar HTML', Error.Message);
@@ -450,7 +457,7 @@ var
 begin
     Preview := TPreviewForm.Create(Self);
     try
-        Preview.ShowMarkdown(EditorMemo.Text);
+        Preview.ShowMarkdown(EditorMemo.Text, HtmlDocumentTemplate);
     finally
         Preview.Free;
     end;

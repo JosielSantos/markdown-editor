@@ -24,6 +24,9 @@ uses
     SysUtils,
     TestRegistry;
 
+const
+    TEST_HTML_TEMPLATE = '<!doctype html><html><body>{{content}}</body></html>';
+
 procedure THtmlExportTests.BuildsHtmlExportFileName;
 begin
     AssertEquals(
@@ -41,6 +44,7 @@ begin
     try
         ExportMarkdownToHtmlFile(
             '---' + LineEnding + 'title: Hidden metadata' + LineEnding + '---' + LineEnding + '# Content',
+            TEST_HTML_TEMPLATE,
             ExportFileName
         );
         Html := ReadUtf8TextFile(ExportFileName);

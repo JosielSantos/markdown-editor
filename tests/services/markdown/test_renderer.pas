@@ -12,6 +12,7 @@ type
     TMarkdownRendererTests = class(TTestCase)
     private
         procedure AssertHtmlContains(const Description, Html, Expected: string);
+        function RenderMarkdown(const Markdown: string): string;
     published
         procedure RendersCommonMarkdown;
         procedure AddsGitHubStyleHeadingAnchors;
@@ -31,16 +32,24 @@ uses
     SysUtils,
     TestRegistry;
 
+const
+    TEST_HTML_TEMPLATE = '<!doctype html><html><body>{{content}}</body></html>';
+
 procedure TMarkdownRendererTests.AssertHtmlContains(const Description, Html, Expected: string);
 begin
     AssertTrue(Description, ContainsStr(Html, Expected));
+end;
+
+function TMarkdownRendererTests.RenderMarkdown(const Markdown: string): string;
+begin
+    Result := MarkdownToHtml(Markdown, TEST_HTML_TEMPLATE);
 end;
 
 procedure TMarkdownRendererTests.AddsGitHubStyleHeadingAnchors;
 var
     Html: string;
 begin
-    Html := MarkdownToHtml('## WebView4Delphi' + LineEnding + '## WebView4Delphi');
+    Html := RenderMarkdown('## WebView4Delphi' + LineEnding + '## WebView4Delphi');
     AssertHtmlContains('primeira âncora', Html, '<h2 id="webview4delphi">WebView4Delphi</h2>');
     AssertHtmlContains('âncora repetida', Html, '<h2 id="webview4delphi-1">WebView4Delphi</h2>');
 end;
@@ -50,7 +59,7 @@ var
     Html: string;
 begin
     Html :=
-        MarkdownToHtml(
+        RenderMarkdown(
             '# Título'
                 + LineEnding
                 + LineEnding
@@ -78,7 +87,7 @@ procedure TMarkdownRendererTests.RendersGitHubExtensions;
 var
     Html: string;
 begin
-    Html := MarkdownToHtml('~~texto removido~~');
+    Html := RenderMarkdown('~~texto removido~~');
     AssertHtmlContains('texto riscado', Html, '<del>texto removido</del>');
 end;
 
@@ -86,7 +95,7 @@ procedure TMarkdownRendererTests.RendersNestedLists;
 var
     Html: string;
 begin
-    Html := MarkdownToHtml('- pai' + LineEnding + '  - filho' + LineEnding + '  - filha');
+    Html := RenderMarkdown('- pai' + LineEnding + '  - filho' + LineEnding + '  - filha');
     AssertHtmlContains('lista aninhada', Html, '<li>filho</li>');
 end;
 
@@ -94,7 +103,7 @@ procedure TMarkdownRendererTests.RendersTaskLists;
 var
     Html: string;
 begin
-    Html := MarkdownToHtml('* [] Tarefa1' + LineEnding + '* [x] Tarefa2');
+    Html := RenderMarkdown('* [] Tarefa1' + LineEnding + '* [x] Tarefa2');
     AssertHtmlContains('tarefa desmarcada', Html, '<li><input type="checkbox" disabled> Tarefa1</li>');
     AssertHtmlContains('tarefa marcada', Html, '<li><input type="checkbox" checked disabled> Tarefa2</li>');
 end;
@@ -104,7 +113,7 @@ var
     Html: string;
 begin
     Html :=
-        MarkdownToHtml(
+        RenderMarkdown(
             '---' + #10 + 'title: Hidden metadata' + #10 + 'author: Hidden person' + #10 + '---' + #10 + '# Content'
         );
     AssertFalse('front matter title', ContainsStr(Html, 'Hidden metadata'));
@@ -116,7 +125,7 @@ procedure TMarkdownRendererTests.PreservesOpeningThematicBreakWithoutClosingDeli
 var
     Html: string;
 begin
-    Html := MarkdownToHtml('---' + LineEnding + 'Visible text');
+    Html := RenderMarkdown('---' + LineEnding + 'Visible text');
     AssertHtmlContains('content without complete front matter', Html, 'Visible text');
 end;
 
@@ -124,7 +133,7 @@ procedure TMarkdownRendererTests.SanitizesUnsafeHtml;
 var
     Html: string;
 begin
-    Html := MarkdownToHtml('<script>alert(1)</script>' + LineEnding + '[perigoso](javascript:alert(1))');
+    Html := RenderMarkdown('<script>alert(1)</script>' + LineEnding + '[perigoso](javascript:alert(1))');
     AssertHtmlContains('escape de HTML', Html, '&lt;script&gt;alert(1)&lt;/script&gt;');
 end;
 

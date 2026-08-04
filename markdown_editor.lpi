@@ -66,7 +66,7 @@
         <PackageName Value="argparser_fp"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="38">
+    <Units Count="40">
       <Unit0>
         <Filename Value="markdown_editor.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -256,6 +256,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Markdown_Checker_Tab"/>
       </Unit37>
+      <Unit38>
+        <Filename Value="src/services/markdown/html_document.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Html_Document"/>
+      </Unit38>
+      <Unit39>
+        <Filename Value="src/app/html_document_template.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Html_Document_Template"/>
+      </Unit39>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

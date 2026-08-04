@@ -3,6 +3,8 @@ program TestRunner;
 {$MODE objfpc}
 {$H+}
 
+{$R ../resources/markdown_editor_resources.rc}
+
 uses
     Classes,
     SysUtils,
@@ -16,6 +18,7 @@ uses
     Test_File_Watcher,
     Test_Recent_File_Positions,
     Test_Files,
+    Test_Html_Document_Template,
     Test_Html_Export,
     Test_Language_Server_Process,
     Test_Language_Server_State,

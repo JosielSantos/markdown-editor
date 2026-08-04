@@ -6,7 +6,7 @@ unit Html_Export;
 interface
 
 function HtmlExportFileName(const MarkdownFileName: string): string;
-procedure ExportMarkdownToHtmlFile(const Markdown, HtmlFileName: string);
+procedure ExportMarkdownToHtmlFile(const Markdown, HtmlTemplate, HtmlFileName: string);
 
 implementation
 
@@ -20,9 +20,9 @@ begin
     Result := ChangeFileExt(MarkdownFileName, '.html');
 end;
 
-procedure ExportMarkdownToHtmlFile(const Markdown, HtmlFileName: string);
+procedure ExportMarkdownToHtmlFile(const Markdown, HtmlTemplate, HtmlFileName: string);
 begin
-    WriteUtf8TextFile(HtmlFileName, MarkdownToHtml(Markdown));
+    WriteUtf8TextFile(HtmlFileName, MarkdownToHtml(Markdown, HtmlTemplate));
 end;
 
 end.

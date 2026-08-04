@@ -7,15 +7,15 @@ interface
 
 uses
     Forms,
-    Recent_Files,
-    StdCtrls;
+    Markdown_Memo,
+    Recent_Files;
 
 type
     TLoadDocumentEvent = TFileOpenEvent;
 
     TSessionController = class
     private
-        EditorMemo: TMemo;
+        EditorMemo: TMarkdownMemo;
         LoadDocumentHandler: TLoadDocumentEvent;
         OwnerForm: TCustomForm;
         SettingsFileName: string;
@@ -23,7 +23,7 @@ type
     public
         constructor Create(
             TheOwnerForm: TCustomForm;
-            TheEditorMemo: TMemo;
+            TheEditorMemo: TMarkdownMemo;
             TheLoadDocumentHandler: TLoadDocumentEvent;
             const TheSettingsFileName: string
         );
@@ -39,7 +39,6 @@ implementation
 uses
     LCLIntf,
     LCLType,
-    Line_Navigation,
     SysUtils;
 
 procedure TSessionController.ShowError(const DialogTitle, ErrorMessage: string);
@@ -49,7 +48,7 @@ end;
 
 constructor TSessionController.Create(
     TheOwnerForm: TCustomForm;
-    TheEditorMemo: TMemo;
+    TheEditorMemo: TMarkdownMemo;
     TheLoadDocumentHandler: TLoadDocumentEvent;
     const TheSettingsFileName: string
 );
@@ -68,8 +67,7 @@ end;
 
 procedure TSessionController.PositionCursorAtLine(LineNumber: Integer);
 begin
-    LineNumber := ClampLineNumber(LineNumber, EditorMemo.Lines.Count);
-    EditorMemo.SelStart := MemoLineStartIndex(EditorMemo.Lines, LineNumber);
+    EditorMemo.PositionCursorAtLine(LineNumber);
     if OwnerForm.Visible and EditorMemo.CanFocus then
         EditorMemo.SetFocus;
 end;

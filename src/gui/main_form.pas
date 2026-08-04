@@ -12,18 +12,18 @@ uses
     External_File_Controller,
     Forms,
     Language_Server_Controller,
+    Markdown_Memo,
     Options_Controller,
     Preferences_Ini,
     Recent_Files_Controller,
-    Session_Controller,
-    StdCtrls;
+    Session_Controller;
 
 type
     TEditorForm = class(TForm)
     private
         Document: TDocumentState;
         EditorPreferences: TEditorPreferences;
-        EditorMemo: TMemo;
+        EditorMemo: TMarkdownMemo;
         ExternalFiles: TExternalFileController;
         HtmlDocumentTemplate: string;
         LanguageServer: TLanguageServerController;
@@ -88,11 +88,11 @@ uses
     LCLIntf,
     LCLType,
     Link,
-    Markdown_Memo,
     Markdown_Save_Dialog,
     Menus,
     Preview_Form,
     Editor,
+    StdCtrls,
     SysUtils;
 
 procedure TEditorForm.CreateEditor;

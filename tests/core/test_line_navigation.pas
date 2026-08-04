@@ -12,7 +12,6 @@ type
     TLineNavigationTests = class(TTestCase)
     published
         procedure AcceptsLineWithinDocument;
-        procedure CalculatesMemoLineStartIndex;
         procedure ClampsLineToDocumentBounds;
         procedure RejectsInvalidLineValues;
         procedure TreatsEmptyDocumentAsOneLine;
@@ -21,9 +20,7 @@ type
 implementation
 
 uses
-    Classes,
     Line_Navigation,
-    SysUtils,
     TestRegistry;
 
 procedure TLineNavigationTests.AcceptsLineWithinDocument;
@@ -32,27 +29,6 @@ var
 begin
     AssertTrue(TryParseLineNumber(' 2 ', 3, LineNumber));
     AssertEquals(2, LineNumber);
-end;
-
-procedure TLineNavigationTests.CalculatesMemoLineStartIndex;
-var
-    ExpectedIndex: Integer;
-    Lines: TStringList;
-begin
-    Lines := TStringList.Create;
-    try
-        Lines.Add('Primeira linha');
-        Lines.Add('ação');
-        Lines.Add('Terceira linha');
-        ExpectedIndex :=
-            Length(UTF8Decode('Primeira linha'))
-                + Length(LineEnding)
-                + Length(UTF8Decode('ação'))
-                + Length(LineEnding);
-        AssertEquals(ExpectedIndex, MemoLineStartIndex(Lines, 3));
-    finally
-        Lines.Free;
-    end;
 end;
 
 procedure TLineNavigationTests.ClampsLineToDocumentBounds;

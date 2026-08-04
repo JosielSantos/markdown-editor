@@ -6,7 +6,9 @@ unit Document_State;
 interface
 
 const
+    DOCUMENT_ENCODING_ISO_8859_1 = 'iso88591';
     DOCUMENT_ENCODING_UTF8 = 'utf8';
+    DOCUMENT_ENCODING_WINDOWS_1252 = 'cp1252';
 
 type
     TDocumentEncoding = record

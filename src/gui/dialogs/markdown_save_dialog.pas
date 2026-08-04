@@ -34,8 +34,6 @@ const
     ENCODING_ISO_8859_1_ITEM_ID = 3;
     ENCODING_WINDOWS_1252_ITEM_ID = 4;
     ENCODING_ORIGINAL_ITEM_ID = 5;
-    ENCODING_ISO_8859_1 = 'iso88591';
-    ENCODING_WINDOWS_1252 = 'cp1252';
     HRESULT_CANCELLED = HRESULT($800704C7);
     SIGDN_FILE_SYSTEM_PATH: SIGDN = -2147123200;
     IID_SHELL_ITEM: TGUID = '{43826D1E-E718-42EE-BC55-A1E261C37BFE}';
@@ -55,9 +53,9 @@ begin
             Exit(ENCODING_UTF8_BOM_ITEM_ID);
         Exit(ENCODING_UTF8_ITEM_ID);
     end;
-    if SameText(Encoding.Name, ENCODING_ISO_8859_1) then
+    if SameText(Encoding.Name, DOCUMENT_ENCODING_ISO_8859_1) then
         Exit(ENCODING_ISO_8859_1_ITEM_ID);
-    if SameText(Encoding.Name, ENCODING_WINDOWS_1252) then
+    if SameText(Encoding.Name, DOCUMENT_ENCODING_WINDOWS_1252) then
         Exit(ENCODING_WINDOWS_1252_ITEM_ID);
     Result := ENCODING_ORIGINAL_ITEM_ID;
 end;
@@ -78,12 +76,12 @@ begin
         end;
         ENCODING_ISO_8859_1_ITEM_ID:
         begin
-            Result.Name := ENCODING_ISO_8859_1;
+            Result.Name := DOCUMENT_ENCODING_ISO_8859_1;
             Result.HasUtf8Bom := False;
         end;
         ENCODING_WINDOWS_1252_ITEM_ID:
         begin
-            Result.Name := ENCODING_WINDOWS_1252;
+            Result.Name := DOCUMENT_ENCODING_WINDOWS_1252;
             Result.HasUtf8Bom := False;
         end;
     end;

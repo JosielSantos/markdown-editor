@@ -24,8 +24,6 @@ uses
     LConvEncoding;
 
 const
-    ENCODING_ISO_8859_1 = 'iso88591';
-    ENCODING_WINDOWS_1252 = 'cp1252';
     UTF8_BOM = #$EF#$BB#$BF;
 
 function ReadFileBytes(const FileName: string): string;
@@ -90,8 +88,8 @@ begin
     if Content = '' then
         Exit(DOCUMENT_ENCODING_UTF8);
     Result := NormalizeEncoding(GuessEncoding(Content));
-    if (Result = ENCODING_WINDOWS_1252) and not ContainsWindows1252Characters(Content) then
-        Result := ENCODING_ISO_8859_1;
+    if (Result = DOCUMENT_ENCODING_WINDOWS_1252) and not ContainsWindows1252Characters(Content) then
+        Result := DOCUMENT_ENCODING_ISO_8859_1;
 end;
 
 function ReadTextFile(const FileName: string; out Encoding: TDocumentEncoding): string;
